@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
-# Startup script for Render. Start the API server immediately so Render can
-# detect the open web port. Do not build/rebuild the Chroma index in the web
-# startup path, because that can delay port binding and cause deploy failures.
+# Startup script for Render.
+#
+# Render needs the web server to bind to $PORT quickly. If the Chroma vector
+# index is missing, build it in the background while the API starts immediately.
+# During that background build, the frontend may temporarily show "Index not
+# built". Once the background job finishes, subsequent requests should work.
 set -e
 
 if [ ! -d "data/chroma" ]; then
-  echo "==> WARNING: data/chroma does not exist. The vector index may be missing."
-  echo "==> Build it separately with: python embed_and_search.py --rebuild"
+  echo "==> WARNING: data/chroma does not exist. Starting background index build..."
+  (
+    python - <<'EOF'
+from embed_and_search import load_corpus, build_index, CORPUS_PATH
+print("==> Background index build started.")
+build_index(load_corpus(CORPUS_PATH))
+print("==> Background index build finished. Index ready.")
+EOF
+  ) &
 else
   echo "==> Found existing vector index at data/chroma."
 fi
