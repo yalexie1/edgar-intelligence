@@ -65,4 +65,4 @@ if __name__ == "__main__":
         print("Common causes: a wrong or expired key, no billing credit added yet,")
         print("or a model name that has changed since this was written.")
         sys.exit(1)
-    print("\nPhase 0 complete. Both providers respond. You're ready for Phase 1.")
+    print("\nBoth providers have responded. Ready!")
