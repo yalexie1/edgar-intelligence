@@ -1,25 +1,15 @@
 #!/usr/bin/env bash
-# Startup script for Render.
-#
-# Render needs the web server to bind to $PORT quickly. If the Chroma vector
-# index is missing, build it in the background while the API starts immediately.
-# During that background build, the frontend may temporarily show "Index not
-# built". Once the background job finishes, subsequent requests should work.
+# Startup script for Render. Builds the Chroma index if it doesn't exist yet,
+# then launches the API server. On the free tier the index is rebuilt on each
+# new deployment; with a persistent disk it's rebuilt only on the first deploy.
 set -e
 
-if [ ! -d "data/chroma" ]; then
-  echo "==> WARNING: data/chroma does not exist. Starting background index build..."
-  (
-    python - <<'EOF'
+echo "==> Checking vector index..."
+python - <<'EOF'
 from embed_and_search import load_corpus, build_index, CORPUS_PATH
-print("==> Background index build started.")
 build_index(load_corpus(CORPUS_PATH))
-print("==> Background index build finished. Index ready.")
+print("Index ready.")
 EOF
-  ) &
-else
-  echo "==> Found existing vector index at data/chroma."
-fi
 
 echo "==> Starting API server on port ${PORT:-8000}..."
 exec uvicorn api:app --host 0.0.0.0 --port "${PORT:-8000}"
