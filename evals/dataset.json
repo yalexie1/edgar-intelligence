@@ -1,0 +1,169 @@
+[
+  {
+    "id": "aapl_fy2025_revenue",
+    "group": "factual",
+    "question": "What was Apple's total revenue in fiscal year 2025?",
+    "expected_tickers": ["AAPL"],
+    "answer_contains": ["416"],
+    "notes": "10-K FY2025: $416,161M total net sales"
+  },
+  {
+    "id": "nvda_datacenter_q2fy25",
+    "group": "factual",
+    "question": "What was NVIDIA's data center revenue in the second quarter of fiscal year 2025 and how did it grow year over year?",
+    "expected_tickers": ["NVDA"],
+    "answer_contains": ["26.3", "154"],
+    "notes": "10-Q 2024-07: $26.3B data center revenue, +154% YoY"
+  },
+  {
+    "id": "msft_cloud_growth",
+    "group": "factual",
+    "question": "What percentage did Microsoft's overall revenue grow in its most recent quarterly filing?",
+    "expected_tickers": ["MSFT"],
+    "answer_contains": [],
+    "notes": "Growth varies by quarter (12-18%); retrieval-only check — any MSFT quarter is valid"
+  },
+  {
+    "id": "googl_cloud_growth",
+    "group": "factual",
+    "question": "How fast did Google Cloud revenue grow year over year in Google's most recent quarterly filing?",
+    "expected_tickers": ["GOOGL"],
+    "answer_contains": ["34"],
+    "notes": "10-Q 2025-09: Google Cloud +34% YoY"
+  },
+  {
+    "id": "avgo_gross_margin",
+    "group": "factual",
+    "question": "What was Broadcom's gross margin percentage in its most recent quarterly filing?",
+    "expected_tickers": ["AVGO"],
+    "answer_contains": ["64"],
+    "notes": "10-Q 2024-08: gross margin 64%"
+  },
+  {
+    "id": "aapl_revenue_yoy",
+    "group": "factual",
+    "question": "How did Apple's total revenue change between fiscal year 2024 and fiscal year 2025?",
+    "expected_tickers": ["AAPL"],
+    "answer_contains": ["391", "416"],
+    "notes": "FY2024: $391,035M; FY2025: $416,161M — both figures should appear"
+  },
+  {
+    "id": "nflx_strategy",
+    "group": "factual",
+    "question": "What is Netflix's stated strategy for growing its business?",
+    "expected_tickers": ["NFLX"],
+    "answer_contains": ["grow"],
+    "notes": "Filings state 'core strategy is to grow our business globally'"
+  },
+  {
+    "id": "tsla_competition",
+    "group": "factual",
+    "question": "How does Tesla describe the competitive landscape in the EV market?",
+    "expected_tickers": ["TSLA"],
+    "answer_contains": [],
+    "notes": "Retrieval-only check; TSLA should describe EV competition"
+  },
+  {
+    "id": "amd_ai_risks",
+    "group": "factual",
+    "question": "What AI-related risks does AMD disclose in its SEC filings?",
+    "expected_tickers": ["AMD"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AMD 10-Q discusses AI misuse, regulation, public acceptance"
+  },
+  {
+    "id": "intc_challenges",
+    "group": "factual",
+    "question": "What major business challenges does Intel describe in its most recent filings?",
+    "expected_tickers": ["INTC"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; INTC is a harder retrieval case given competitive pressure language"
+  },
+  {
+    "id": "nvda_datacenter_trend",
+    "group": "temporal",
+    "question": "How has NVIDIA's data center segment revenue grown across multiple quarters over the past year?",
+    "expected_tickers": ["NVDA"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "Tests multi-period retrieval; should cite at least two distinct quarters"
+  },
+  {
+    "id": "aapl_china_trend",
+    "group": "temporal",
+    "question": "How have Apple's Greater China revenues trended between fiscal year 2024 and 2025?",
+    "expected_tickers": ["AAPL"],
+    "answer_contains": ["china"],
+    "notes": "FY2025 10-K: Greater China net sales $64,377M, down vs FY2024"
+  },
+  {
+    "id": "china_risk_companies",
+    "group": "cross_company",
+    "question": "Which companies in the corpus mention China as a significant business risk?",
+    "expected_tickers": ["AAPL", "NVDA"],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "At minimum AAPL, NVDA, AVGO mention China; diverse should be auto-triggered"
+  },
+  {
+    "id": "nvda_vs_amd_ai_risks",
+    "group": "cross_company",
+    "question": "How do NVIDIA and AMD each describe their AI-related regulatory risks?",
+    "expected_tickers": ["NVDA", "AMD"],
+    "answer_contains": [],
+    "notes": "Two named companies; auto-diverse should kick in"
+  },
+  {
+    "id": "cross_company_hardware_supply",
+    "group": "cross_company",
+    "question": "Which companies disclose the most concentration risk in their hardware supply chains?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "'which companies' triggers auto-diverse; should pull META, AAPL, AVGO etc."
+  },
+  {
+    "id": "msft_googl_ai_capex",
+    "group": "cross_company",
+    "question": "What do Microsoft and Google say about capital expenditure for AI infrastructure?",
+    "expected_tickers": ["MSFT", "GOOGL"],
+    "answer_contains": [],
+    "notes": "Two named companies; tests capex/investment language retrieval"
+  },
+  {
+    "id": "abstain_capital_gains_tax",
+    "group": "abstain",
+    "question": "What is the current US capital gains tax rate for individual investors?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Out-of-corpus macro fact; model must abstain"
+  },
+  {
+    "id": "abstain_stock_price",
+    "group": "abstain",
+    "question": "What is Apple's stock price right now?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Real-time market data; not in SEC filings"
+  },
+  {
+    "id": "abstain_samsung",
+    "group": "abstain",
+    "question": "What does Samsung say about its semiconductor manufacturing capacity?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Samsung not in corpus; model must abstain or flag not available"
+  },
+  {
+    "id": "abstain_macro_forecast",
+    "group": "abstain",
+    "question": "Will the Federal Reserve cut interest rates in the second half of 2026?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Forward-looking macro prediction; not answerable from SEC filings"
+  }
+]
