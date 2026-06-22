@@ -9,6 +9,9 @@ Run:  uvicorn api:app --reload --port 8000
 Then: open http://127.0.0.1:8000/docs for an interactive page to test it.
 """
 
+import json
+from pathlib import Path
+
 import chromadb
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -101,3 +104,12 @@ def query(q: Query):
         "sources": sources,
         "filter_applied": effective_where,
     }
+
+
+@app.get("/evals/results")
+def evals_results():
+    """Return the last saved eval run results for the dashboard."""
+    path = Path("evals/last_results.json")
+    if not path.exists():
+        raise HTTPException(404, "No eval results found. Run `python evals/eval.py` first.")
+    return json.loads(path.read_text())

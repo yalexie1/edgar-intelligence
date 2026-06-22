@@ -25,6 +25,7 @@ Run:
 """
 
 import argparse
+import datetime
 import json
 import sys
 import time
@@ -236,6 +237,63 @@ def run(base_url, verbose=False, group_filter=None):
             gp = sum(r["correct"] for r in gr)
             print(f"  {g:<22} {gp:>6}  {len(gr):>6}  {pct(gp, len(gr)):>5}")
     print(f"{'─'*56}\n")
+
+    # ── Save results for dashboard ──────────────────────────────────────────────
+    # Map group → question_type label used in the dashboard.
+    def question_type(group):
+        if group == "factual":    return "single-lookup"
+        if group == "abstain":    return "out-of-corpus"
+        return "multi-document"   # temporal + cross_company
+
+    dataset_map = {c["id"]: c for c in cases}
+    saved = []
+    for r in all_valid:
+        c = dataset_map.get(r["id"], {})
+        saved.append({
+            "id":              r["id"],
+            "group":           r["group"],
+            "question_type":   question_type(r["group"]),
+            "question":        c.get("question", ""),
+            "correct":         r["correct"],
+            "retrieval_hit":   r["retrieval_hit"],
+            "answer_hit":      r["answer_hit"],
+            "abstain_correct": r["abstain_correct"],
+            "unique_tickers":  r["unique_tickers"],
+            "filter_applied":  r.get("filter_applied"),
+            "elapsed":         round(r["elapsed"], 2),
+            "answer_excerpt":  r["answer"][:300].replace("\n", " "),
+        })
+
+    output = {
+        "run_date": datetime.datetime.now().isoformat(),
+        "summary": {
+            "total":                n_total,
+            "passed":               n_pass,
+            "pass_rate":            round(n_pass / n_total, 3) if n_total else 0,
+            "retrieval_hit_rate":   round(n_ret_hit / n_f, 3) if n_f else 0,
+            "answer_faithfulness":  round(n_ans_hit / n_f, 3) if n_f else 0,
+            "abstain_precision":    round(n_ab_ok / n_ab, 3) if n_ab else 0,
+            "by_group": {
+                g: {
+                    "passed": sum(r["correct"] for r in all_valid if r["group"] == g),
+                    "total":  sum(1 for r in all_valid if r["group"] == g),
+                }
+                for g in sorted({r["group"] for r in all_valid})
+            },
+            "by_question_type": {
+                qt: {
+                    "passed": sum(r["correct"] for r in saved if r["question_type"] == qt),
+                    "total":  sum(1 for r in saved if r["question_type"] == qt),
+                }
+                for qt in ["single-lookup", "multi-document", "out-of-corpus"]
+            },
+        },
+        "cases": saved,
+    }
+
+    results_path = Path(__file__).parent / "last_results.json"
+    results_path.write_text(json.dumps(output, indent=2))
+    print(f"  Results saved → {results_path}\n")
 
     return results
 

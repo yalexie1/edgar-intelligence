@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EDGAR Intelligence — Eval Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #eaeef2;
+    --surface: #ffffff;
+    --ink: #15202b;
+    --muted: #5b6675;
+    --line: #dde2e8;
+    --accent: #0e6b5c;
+    --accent-soft: #e3f0ed;
+    --pass: #0e6b5c;
+    --pass-soft: #e3f0ed;
+    --fail: #b5322a;
+    --fail-soft: #fdecea;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 48px 20px 80px; }
+
+  /* header */
+  .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .eyebrow a { color: var(--muted); text-decoration: none; font-size: 11px; }
+  .eyebrow a:hover { color: var(--accent); }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 36px; letter-spacing: -.01em; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+  /* metric cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 36px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .card-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .card-value { font-family: var(--font-display); font-size: 36px; font-weight: 600; color: var(--accent); line-height: 1; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* section headers */
+  .section-head { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 32px 0 12px; }
+
+  /* breakdown table */
+  .breakdown { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 36px; }
+  .breakdown table { width: 100%; border-collapse: collapse; }
+  .breakdown th { background: var(--bg); font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+  .breakdown td { padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .breakdown tr:last-child td { border-bottom: none; }
+  .group-name { font-weight: 500; }
+  .bar-wrap { width: 160px; }
+  .bar-bg { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .6s ease; }
+  .pct-label { font-family: var(--font-mono); font-size: 12px; color: var(--accent); min-width: 40px; text-align: right; }
+
+  /* filter row */
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .filter-row label { font-size: 13px; color: var(--muted); }
+  .filter-row select { font-family: var(--font-body); font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 6px 24px 6px 9px; outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235b6675' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; cursor: pointer; }
+  .filter-row select:focus { border-color: var(--accent); }
+  .count-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* cases table */
+  .cases-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .cases-wrap table { width: 100%; border-collapse: collapse; }
+  .cases-wrap th { background: var(--bg); font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--line); cursor: pointer; user-select: none; white-space: nowrap; }
+  .cases-wrap th:hover { color: var(--ink); }
+  .cases-wrap td { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: top; }
+  .cases-wrap tr:last-child td { border-bottom: none; }
+  .cases-wrap tr:hover td { background: var(--bg); }
+
+  .badge { display: inline-block; font-family: var(--font-mono); font-size: 10px; border-radius: 4px; padding: 2px 6px; white-space: nowrap; }
+  .badge-pass { background: var(--pass-soft); color: var(--pass); }
+  .badge-fail { background: var(--fail-soft); color: var(--fail); }
+  .badge-group { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .badge-type  { background: var(--accent-soft); color: var(--accent); }
+
+  .case-id { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .case-q { color: var(--ink); line-height: 1.4; }
+  .tick-col { text-align: center; font-size: 14px; }
+  .tick-pass { color: var(--pass); }
+  .tick-fail { color: var(--fail); }
+  .tick-na   { color: var(--line); }
+
+  /* detail expand */
+  .detail-row { background: var(--bg) !important; }
+  .detail-row td { padding: 0 14px 12px 14px; font-size: 12px; color: var(--muted); font-family: var(--font-mono); line-height: 1.6; }
+  .answer-excerpt { max-height: 80px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+
+  /* run info */
+  .run-info { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-bottom: 28px; }
+
+  /* loading/error */
+  .loading { color: var(--muted); font-family: var(--font-mono); font-size: 14px; padding: 60px 0; text-align: center; }
+  .err { color: var(--fail); font-size: 14px; padding: 40px 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading">Loading eval results…</div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+function pct(n, d) { return d ? Math.round(100 * n / d) : 0; }
+function fmtPct(n, d) { return pct(n, d) + "%"; }
+
+function tick(val, na) {
+  if (na) return `<span class="tick-na">—</span>`;
+  return val
+    ? `<span class="tick-pass">✓</span>`
+    : `<span class="tick-fail">✗</span>`;
+}
+
+function barRow(label, n, total, extra) {
+  const p = pct(n, total);
+  return `<tr>
+    <td class="group-name">${label}${extra ? `<br><span style="font-size:11px;color:var(--muted);font-weight:400">${extra}</span>` : ""}</td>
+    <td style="font-family:var(--font-mono);font-size:13px">${n} / ${total}</td>
+    <td class="bar-wrap">
+      <div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div>
+    </td>
+    <td class="pct-label">${p}%</td>
+  </tr>`;
+}
+
+let allCases = [];
+let sortCol = null;
+let sortDir = 1;
+
+function renderCases(cases) {
+  const tbody = document.getElementById("casesTbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  cases.forEach(c => {
+    const isAbstain = c.group === "abstain";
+    const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    tr.innerHTML = `
+      <td class="case-id">${c.id}</td>
+      <td class="case-q">${escHtml(c.question)}</td>
+      <td><span class="badge badge-group">${c.group}</span></td>
+      <td><span class="badge badge-type">${c.question_type}</span></td>
+      <td class="tick-col">${tick(c.correct)}</td>
+      <td class="tick-col">${tick(c.retrieval_hit, isAbstain)}</td>
+      <td class="tick-col">${tick(c.answer_hit, isAbstain)}</td>
+      <td class="tick-col">${tick(c.abstain_correct, !isAbstain)}</td>
+      <td style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">${c.elapsed}s</td>`;
+
+    // expandable detail row
+    const detailTr = document.createElement("tr");
+    detailTr.className = "detail-row";
+    detailTr.style.display = "none";
+    detailTr.innerHTML = `<td colspan="9">
+      <div><strong>Tickers:</strong> ${(c.unique_tickers || []).join(", ") || "—"}</div>
+      ${c.filter_applied ? `<div><strong>Auto-filter:</strong> ${JSON.stringify(c.filter_applied)}</div>` : ""}
+      <div class="answer-excerpt"><strong>Answer:</strong> ${escHtml(c.answer_excerpt || "")}</div>
+    </td>`;
+
+    tr.addEventListener("click", () => {
+      detailTr.style.display = detailTr.style.display === "none" ? "table-row" : "none";
+    });
+
+    tbody.appendChild(tr);
+    tbody.appendChild(detailTr);
+  });
+  document.getElementById("countLabel").textContent = `${cases.length} cases`;
+}
+
+function applyFilters() {
+  const group  = document.getElementById("filterGroup").value;
+  const status = document.getElementById("filterStatus").value;
+  const qtype  = document.getElementById("filterType").value;
+
+  let filtered = allCases.filter(c =>
+    (!group  || c.group         === group)  &&
+    (!qtype  || c.question_type === qtype)  &&
+    (!status || (status === "pass" ? c.correct : !c.correct))
+  );
+
+  if (sortCol !== null) {
+    filtered = [...filtered].sort((a, b) => {
+      const vals = [a, b].map(c => [c.id, c.question, c.group, c.question_type, c.correct, c.retrieval_hit, c.answer_hit, c.abstain_correct, c.elapsed][sortCol]);
+      return (vals[0] > vals[1] ? 1 : vals[0] < vals[1] ? -1 : 0) * sortDir;
+    });
+  }
+
+  renderCases(filtered);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+async function load() {
+  const app = document.getElementById("app");
+  try {
+    const res = await fetch(`${API}/evals/results`);
+    if (!res.ok) throw new Error(res.status === 404
+      ? "No eval results found. Run: python evals/eval.py"
+      : `API error ${res.status}`);
+    const d = await res.json();
+    allCases = d.cases || [];
+    render(d);
+  } catch (e) {
+    app.innerHTML = `<div class="err">
+      <div style="font-family:var(--font-display);font-size:22px;margin-bottom:8px">No results yet</div>
+      <div style="color:var(--muted)">${escHtml(e.message)}</div>
+      <div style="margin-top:16px;font-family:var(--font-mono);font-size:12px;color:var(--muted)">
+        Make sure the API is running (uvicorn api:app --port 8000) and run:<br>
+        <code>python evals/eval.py</code>
+      </div>
+    </div>`;
+  }
+}
+
+function render(d) {
+  const s = d.summary;
+  const runDate = d.run_date ? new Date(d.run_date).toLocaleString() : "unknown";
+
+  const byGroup = s.by_group || {};
+  const byType  = s.by_question_type || {};
+
+  const groupRows = Object.entries(byGroup).map(([g, v]) =>
+    barRow(g, v.passed, v.total)
+  ).join("");
+
+  const typeDescriptions = {
+    "single-lookup":  "factual, single-company",
+    "multi-document": "temporal + cross-company",
+    "out-of-corpus":  "abstain cases",
+  };
+  const typeRows = Object.entries(byType).map(([t, v]) =>
+    barRow(t, v.passed, v.total, typeDescriptions[t])
+  ).join("");
+
+  document.getElementById("app").innerHTML = `
+    <div class="eyebrow">
+      <span>eval dashboard · edgar intelligence</span>
+      <a href="index.html">← back to app</a>
+    </div>
+    <h1>Eval Dashboard</h1>
+    <p class="sub">Automated quality metrics across 100 golden Q&A cases — retrieval, faithfulness, and abstain precision.</p>
+    <div class="run-info">Last run: ${runDate} · ${d.cases.length} cases</div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Overall</div>
+        <div class="card-value">${fmtPct(s.passed, s.total)}</div>
+        <div class="card-sub">${s.passed} / ${s.total} passed</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Retrieval hit-rate</div>
+        <div class="card-value">${Math.round(s.retrieval_hit_rate * 100)}%</div>
+        <div class="card-sub">right company surfaced</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Answer faithfulness</div>
+        <div class="card-value">${Math.round(s.answer_faithfulness * 100)}%</div>
+        <div class="card-sub">expected fact present</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Abstain precision</div>
+        <div class="card-value">${Math.round(s.abstain_precision * 100)}%</div>
+        <div class="card-sub">correctly declined</div>
+      </div>
+    </div>
+
+    <div class="section-head">By question group</div>
+    <div class="breakdown" style="margin-bottom:24px">
+      <table><thead><tr>
+        <th>Group</th><th>Pass / Total</th><th>Progress</th><th>%</th>
+      </tr></thead><tbody>${groupRows}</tbody></table>
+    </div>
+
+    <div class="section-head">By question type</div>
+    <div class="breakdown">
+      <table><thead><tr>
+        <th>Type</th><th>Pass / Total</th><th>Progress</th><th>%</th>
+      </tr></thead><tbody>${typeRows}</tbody></table>
+    </div>
+
+    <div class="section-head" style="margin-top:36px">All cases</div>
+    <div class="filter-row">
+      <label>Group</label>
+      <select id="filterGroup" onchange="applyFilters()">
+        <option value="">All</option>
+        <option>factual</option><option>temporal</option>
+        <option>cross_company</option><option>abstain</option>
+      </select>
+      <label>Type</label>
+      <select id="filterType" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="single-lookup">single-lookup</option>
+        <option value="multi-document">multi-document</option>
+        <option value="out-of-corpus">out-of-corpus</option>
+      </select>
+      <label>Status</label>
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="pass">Pass</option>
+        <option value="fail">Fail</option>
+      </select>
+      <span class="count-label" id="countLabel"></span>
+    </div>
+    <div class="cases-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy(0)">ID</th>
+          <th onclick="sortBy(1)">Question</th>
+          <th onclick="sortBy(2)">Group</th>
+          <th onclick="sortBy(3)">Type</th>
+          <th onclick="sortBy(4)">Pass</th>
+          <th onclick="sortBy(5)">Ret.</th>
+          <th onclick="sortBy(6)">Ans.</th>
+          <th onclick="sortBy(7)">Abs.</th>
+          <th onclick="sortBy(8)">Time</th>
+        </tr></thead>
+        <tbody id="casesTbody"></tbody>
+      </table>
+    </div>`;
+
+  renderCases(allCases);
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  applyFilters();
+}
+
+load();
+</script>
+</body>
+</html>

@@ -5,12 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>EDGAR Intelligence</title>
 
-<!-- Type: an editorial serif for the wordmark, a clean sans for UI, mono for data/citations -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-<!-- marked renders the markdown that Claude returns (bold, lists, headings) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
 
 <style>
@@ -26,75 +23,113 @@
     --font-body: 'Inter', system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   }
-
-  * { box-sizing: border-box; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    margin: 0;
     background: var(--bg);
     color: var(--ink);
     font-family: var(--font-body);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
-  .wrap { max-width: 720px; margin: 0 auto; padding: 56px 20px 80px; }
+  /* ── layout ── */
+  .wrap { max-width: 740px; margin: 0 auto; padding: 48px 20px 0; width: 100%; }
 
-  /* --- header --- */
+  /* ── header ── */
   .eyebrow {
     font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.14em;
+    font-size: 11px;
+    letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--accent);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
+  .eyebrow a { color: var(--muted); text-decoration: none; font-size: 11px; }
+  .eyebrow a:hover { color: var(--accent); }
   h1 {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: 44px;
+    font-size: 40px;
     line-height: 1.05;
-    margin: 0 0 10px;
-    letter-spacing: -0.01em;
+    letter-spacing: -.01em;
+    margin-bottom: 8px;
   }
-  .sub { color: var(--muted); font-size: 16px; margin: 0 0 28px; }
-  .corpus-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 28px;
-  }
+  .sub { color: var(--muted); font-size: 15px; margin-bottom: 20px; }
+
+  /* ── corpus pills ── */
+  .corpus-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 22px; }
   .corpus-pill {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     color: var(--accent);
     background: var(--accent-soft);
     border-radius: 4px;
-    padding: 3px 7px;
-    letter-spacing: 0.04em;
+    padding: 2px 6px;
   }
+  .corpus-pill.dim { background: transparent; color: var(--muted); border: 1px solid var(--line); }
 
-  /* --- controls row --- */
-  .controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  /* ── controls ── */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
+  .control-group { display: flex; flex-direction: column; gap: 3px; }
+  .control-header { display: flex; align-items: center; gap: 4px; }
   .control-label {
     font-family: var(--font-mono);
     font-size: 10px;
-    letter-spacing: 0.1em;
+    letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--muted);
   }
+
+  /* (i) tooltip */
+  .tip-wrap { position: relative; display: inline-flex; }
+  .tip-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    cursor: default;
+    line-height: 1;
+  }
+  .tip-box {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    background: var(--ink);
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 8px 10px;
+    border-radius: 7px;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .tip-box::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ink);
+  }
+  .tip-wrap:hover .tip-box { display: block; }
+
   select {
     font-family: var(--font-body);
     font-size: 14px;
@@ -102,76 +137,98 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: 8px 28px 8px 10px;
     outline: none;
     cursor: pointer;
-    transition: border-color 0.15s;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235b6675' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235b6675' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
-    padding-right: 28px;
+    transition: border-color .15s;
   }
   select:focus { border-color: var(--accent); }
 
-  /* --- diverse toggle --- */
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-top: 18px; /* align with select bottom */
-  }
-  .toggle-label {
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: var(--muted);
-    cursor: pointer;
-    user-select: none;
-  }
-  .toggle {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    flex-shrink: 0;
-  }
+  /* diverse toggle */
+  .toggle-row { display: flex; align-items: center; gap: 7px; padding-bottom: 1px; }
+  .toggle { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle-track {
-    position: absolute;
-    inset: 0;
-    background: var(--line);
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .toggle-thumb {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 14px;
-    height: 14px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform 0.2s;
-    pointer-events: none;
-  }
+  .toggle-track { position: absolute; inset: 0; background: var(--line); border-radius: 999px; cursor: pointer; transition: background .2s; }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 13px; height: 13px; background: #fff; border-radius: 50%; transition: transform .2s; pointer-events: none; }
   .toggle input:checked ~ .toggle-track { background: var(--accent); }
-  .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(15px); }
+  .toggle-label { font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
 
-  /* --- ask row --- */
-  .ask { display: flex; gap: 10px; }
-  #question {
-    flex: 1;
+  /* clear button */
+  .clear-btn {
+    margin-left: auto;
     font-family: var(--font-body);
-    font-size: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+    align-self: flex-end;
+  }
+  .clear-btn:hover { color: var(--ink); border-color: var(--muted); }
+
+  /* ── input area ── */
+  .ask-row { display: flex; gap: 8px; margin-bottom: 6px; }
+  .input-wrap { position: relative; flex: 1; }
+  #question {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 15px;
     color: var(--ink);
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 10px;
-    padding: 14px 16px;
+    padding: 13px 16px;
     outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color .15s, box-shadow .15s;
   }
   #question:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  /* autocomplete dropdown */
+  .suggestions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    z-index: 50;
+    overflow: hidden;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .suggestions.open { display: block; }
+  .suggestion {
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 1px solid var(--line);
+    transition: background .1s, color .1s;
+  }
+  .suggestion:last-child { border-bottom: none; }
+  .suggestion:hover, .suggestion.active { background: var(--accent-soft); color: var(--accent); }
+  .suggestion mark { background: none; color: var(--accent); font-weight: 600; }
+  .suggestions-label {
+    padding: 7px 14px 4px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+
   #askBtn {
     font-family: var(--font-body);
     font-weight: 600;
@@ -182,71 +239,86 @@
     border-radius: 10px;
     padding: 0 22px;
     cursor: pointer;
-    transition: opacity 0.15s, transform 0.05s;
     white-space: nowrap;
+    transition: opacity .15s, transform .05s;
   }
-  #askBtn:hover { opacity: 0.92; }
+  #askBtn:hover { opacity: .92; }
   #askBtn:active { transform: translateY(1px); }
-  #askBtn:disabled { opacity: 0.5; cursor: default; }
+  #askBtn:disabled { opacity: .5; cursor: default; }
 
-  /* --- example chips --- */
-  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-  .chip {
-    font-family: var(--font-body);
-    font-size: 13px;
-    color: var(--muted);
-    background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 6px 12px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
+  /* ── chat history ── */
+  #chat {
+    margin-top: 10px;
+    padding-bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
   }
-  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .turn { display: flex; flex-direction: column; gap: 10px; }
+  .turn-question {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: .02em;
+  }
+  .turn-question span {
+    color: var(--accent);
+    font-weight: 500;
+    margin-right: 6px;
+  }
 
-  /* --- result --- */
-  #result { margin-top: 34px; }
   .answer {
     background: var(--surface);
     border: 1px solid var(--line);
     border-left: 3px solid var(--accent);
     border-radius: 12px;
-    padding: 24px 28px;
-    animation: rise 0.35s ease both;
+    padding: 22px 26px;
+    animation: rise .3s ease both;
   }
-  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .answer { animation: none; } }
 
-  .answer h1, .answer h2, .answer h3 { font-family: var(--font-display); font-weight: 600; }
-  .answer h1 { font-size: 22px; margin: 4px 0 12px; }
-  .answer h2 { font-size: 19px; margin: 18px 0 8px; }
-  .answer h3 { font-size: 16px; margin: 16px 0 6px; }
-  .answer p, .answer li { font-size: 16px; }
-  .answer ul { padding-left: 20px; }
+  .answer h1,.answer h2,.answer h3 { font-family: var(--font-display); font-weight: 600; }
+  .answer h1 { font-size: 21px; margin: 4px 0 10px; }
+  .answer h2 { font-size: 18px; margin: 16px 0 7px; }
+  .answer h3 { font-size: 15px; margin: 14px 0 5px; }
+  .answer p,.answer li { font-size: 15px; }
+  .answer ul { padding-left: 18px; }
   .answer strong { font-weight: 600; }
+  .answer table { border-collapse: collapse; font-size: 14px; margin: 12px 0; width: 100%; }
+  .answer th,.answer td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  .answer th { background: var(--bg); font-weight: 600; }
 
-  /* citation markers in the answer text */
   .cite {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--accent);
     background: var(--accent-soft);
     border-radius: 4px;
-    padding: 1px 5px;
+    padding: 1px 4px;
     margin: 0 1px;
     vertical-align: super;
     line-height: 1;
   }
 
-  /* --- sources --- */
-  .sources { margin-top: 18px; }
-  .sources-label {
+  /* filter notice */
+  .filter-notice {
     font-family: var(--font-mono);
     font-size: 11px;
-    letter-spacing: 0.12em;
+    color: var(--muted);
+    padding: 2px 0 6px;
+  }
+  .filter-notice em { color: var(--accent); font-style: normal; font-weight: 500; }
+
+  /* sources */
+  .sources { margin-top: 12px; }
+  .sources-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .source {
     font-family: var(--font-mono);
@@ -255,13 +327,12 @@
     padding: 5px 0;
     border-top: 1px solid var(--line);
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: baseline;
     flex-wrap: wrap;
   }
   .source:first-of-type { border-top: none; }
-  .source-n { color: var(--accent); font-weight: 500; min-width: 22px; }
-  .source-meta { flex: 1; }
+  .source-n { color: var(--accent); font-weight: 500; min-width: 20px; }
   .source-badge {
     display: inline-block;
     font-size: 10px;
@@ -269,201 +340,332 @@
     background: var(--accent-soft);
     border-radius: 3px;
     padding: 1px 5px;
-    margin-right: 4px;
-    letter-spacing: 0.03em;
+    margin-right: 3px;
   }
-  .source-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 11px;
-    opacity: 0.7;
-    word-break: break-all;
-  }
+  .source-link { color: var(--accent); text-decoration: none; font-size: 11px; opacity: .7; }
   .source-link:hover { opacity: 1; text-decoration: underline; }
-  .source-scores { color: var(--line); font-size: 11px; white-space: nowrap; }
+  .source-scores { color: var(--line); font-size: 11px; white-space: nowrap; margin-left: auto; }
 
-  /* --- states --- */
-  .status { color: var(--muted); font-family: var(--font-mono); font-size: 14px; padding: 8px 2px; }
-  .error {
-    background: #fdecec;
-    border: 1px solid #f3c2c2;
-    color: #8a2b2b;
-    border-radius: 10px;
-    padding: 14px 18px;
-    font-size: 15px;
-  }
+  /* status / error */
+  .status { color: var(--muted); font-family: var(--font-mono); font-size: 13px; padding: 8px 2px; }
+  .error { background: #fdecec; border: 1px solid #f3c2c2; color: #8a2b2b; border-radius: 10px; padding: 12px 16px; font-size: 14px; }
 
-  .foot { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  .foot { color: var(--muted); font-size: 12px; padding: 20px 20px 32px; max-width: 740px; margin: auto; }
 </style>
 </head>
 <body>
-  <main class="wrap">
-    <div class="eyebrow">retrieval-augmented answers · sec filings</div>
-    <h1>EDGAR Intelligence</h1>
-    <p class="sub">Ask questions about SEC filings from 13 large public companies. Answers cite the exact passage, form, and filing date.</p>
+<div class="wrap">
+  <div class="eyebrow">
+    <span>retrieval-augmented answers · sec filings</span>
+    <a href="dashboard.html">eval dashboard →</a>
+  </div>
+  <h1>EDGAR Intelligence</h1>
+  <p class="sub">Ask questions about SEC filings from 13 large public companies. Answers cite the exact passage, form, and filing date.</p>
 
-    <div class="corpus-pills" id="corpusPills">
-      <span class="corpus-pill">AAPL</span><span class="corpus-pill">MSFT</span>
-      <span class="corpus-pill">GOOGL</span><span class="corpus-pill">AMZN</span>
-      <span class="corpus-pill">META</span><span class="corpus-pill">NVDA</span>
-      <span class="corpus-pill">AVGO</span><span class="corpus-pill">TSLA</span>
-      <span class="corpus-pill">ORCL</span><span class="corpus-pill">CRM</span>
-      <span class="corpus-pill">AMD</span><span class="corpus-pill">NFLX</span>
-      <span class="corpus-pill">INTC</span>
-      <span class="corpus-pill" style="background:transparent;color:var(--muted);border:1px solid var(--line);">10-K · 10-Q · 8-K</span>
+  <div class="corpus-pills">
+    <span class="corpus-pill">AAPL</span><span class="corpus-pill">MSFT</span>
+    <span class="corpus-pill">GOOGL</span><span class="corpus-pill">AMZN</span>
+    <span class="corpus-pill">META</span><span class="corpus-pill">NVDA</span>
+    <span class="corpus-pill">AVGO</span><span class="corpus-pill">TSLA</span>
+    <span class="corpus-pill">ORCL</span><span class="corpus-pill">CRM</span>
+    <span class="corpus-pill">AMD</span><span class="corpus-pill">NFLX</span>
+    <span class="corpus-pill">INTC</span>
+    <span class="corpus-pill dim">10-K · 10-Q · 8-K</span>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <div class="control-header">
+        <span class="control-label">Company</span>
+        <div class="tip-wrap">
+          <button class="tip-btn" tabindex="-1">i</button>
+          <div class="tip-box">Filter results to a single company. Leave blank to search all 13 companies. The system also auto-detects company names from your question — typing "NVIDIA's risks" will automatically filter to NVDA.</div>
+        </div>
+      </div>
+      <select id="tickerFilter">
+        <option value="">All companies</option>
+        <option>AAPL</option><option>MSFT</option><option>GOOGL</option>
+        <option>AMZN</option><option>META</option><option>NVDA</option>
+        <option>AVGO</option><option>TSLA</option><option>ORCL</option>
+        <option>CRM</option><option>AMD</option><option>NFLX</option>
+        <option>INTC</option>
+      </select>
     </div>
 
-    <!-- optional filters -->
-    <div class="controls">
-      <div class="control-group">
-        <span class="control-label">Company</span>
-        <select id="tickerFilter">
-          <option value="">All companies</option>
-          <option>AAPL</option><option>MSFT</option><option>GOOGL</option>
-          <option>AMZN</option><option>META</option><option>NVDA</option>
-          <option>AVGO</option><option>TSLA</option><option>ORCL</option>
-          <option>CRM</option><option>AMD</option><option>NFLX</option>
-          <option>INTC</option>
-        </select>
-      </div>
-
-      <div class="control-group">
+    <div class="control-group">
+      <div class="control-header">
         <span class="control-label">Form type</span>
-        <select id="formFilter">
-          <option value="">All forms</option>
-          <option>10-K</option>
-          <option>10-Q</option>
-          <option>8-K</option>
-        </select>
+        <div class="tip-wrap">
+          <button class="tip-btn" tabindex="-1">i</button>
+          <div class="tip-box">Filter by SEC form type. <strong>10-K</strong> is the annual report. <strong>10-Q</strong> is the quarterly filing. <strong>8-K</strong> covers material events like earnings announcements. Leave blank to search across all forms.</div>
+        </div>
       </div>
+      <select id="formFilter">
+        <option value="">All forms</option>
+        <option>10-K</option>
+        <option>10-Q</option>
+        <option>8-K</option>
+      </select>
+    </div>
 
+    <div class="control-group">
+      <div class="control-header">
+        <span class="control-label">Diverse</span>
+        <div class="tip-wrap">
+          <button class="tip-btn" tabindex="-1">i</button>
+          <div class="tip-box">When on, ensures at least one result per company in the evidence set. Best for "which company…" comparison questions. Auto-enables when your question asks about multiple companies.</div>
+        </div>
+      </div>
       <div class="toggle-row">
-        <label class="toggle" for="diverseToggle" title="Pull at least one result per company — best for cross-company questions">
+        <label class="toggle" for="diverseToggle">
           <input type="checkbox" id="diverseToggle" />
           <div class="toggle-track"></div>
           <div class="toggle-thumb"></div>
         </label>
-        <label class="toggle-label" for="diverseToggle">One result per company</label>
+        <label class="toggle-label" for="diverseToggle">One per company</label>
       </div>
     </div>
 
-    <div class="ask">
-      <input id="question" type="text" placeholder="How did gross margin change year over year?" autocomplete="off" />
-      <button id="askBtn">Ask</button>
+    <button class="clear-btn" id="clearBtn" title="Clear conversation history">Clear</button>
+  </div>
+
+  <!-- input row -->
+  <div class="ask-row">
+    <div class="input-wrap">
+      <input id="question" type="text" placeholder="Ask anything about these filings…" autocomplete="off" />
+      <div class="suggestions" id="suggestions">
+        <div class="suggestions-label">Try asking</div>
+      </div>
     </div>
+    <button id="askBtn">Ask</button>
+  </div>
 
-    <div class="examples" id="examples">
-      <button class="chip">What are NVIDIA's main AI risk factors?</button>
-      <button class="chip">How did Apple's revenue change year over year?</button>
-      <button class="chip">How do Microsoft and Google describe cloud growth?</button>
-      <button class="chip">What does Tesla say about competition?</button>
-    </div>
+  <!-- chat history grows here -->
+  <div id="chat"></div>
+</div>
 
-    <div id="result"></div>
-
-    <p class="foot">Answers are grounded in the filing text and cite their sources. Verify anything important against the original SEC filing.</p>
-  </main>
+<p class="foot">Answers are grounded in the filing text and cite their sources. Verify anything important against the original SEC filing.</p>
 
 <script>
-  const API_URL = "http://127.0.0.1:8000/query";
+  const API_URL    = "http://127.0.0.1:8000/query";
+  const input      = document.getElementById("question");
+  const button     = document.getElementById("askBtn");
+  const chat       = document.getElementById("chat");
+  const tickerSel  = document.getElementById("tickerFilter");
+  const formSel    = document.getElementById("formFilter");
+  const diverseChk = document.getElementById("diverseToggle");
+  const clearBtn   = document.getElementById("clearBtn");
+  const suggestBox = document.getElementById("suggestions");
 
-  const input    = document.getElementById("question");
-  const button   = document.getElementById("askBtn");
-  const result   = document.getElementById("result");
-  const ticker   = document.getElementById("tickerFilter");
-  const form     = document.getElementById("formFilter");
-  const diverse  = document.getElementById("diverseToggle");
-
-  // When a company filter is selected, flip on "one result per company" only if
-  // no company is selected (cross-company mode). If a specific ticker is chosen,
-  // diverse mode doesn't help — turn it off automatically.
-  ticker.addEventListener("change", () => {
-    if (ticker.value) diverse.checked = false;
+  // ── auto-disable diverse when a specific ticker is chosen ──────────────────
+  tickerSel.addEventListener("change", () => {
+    if (tickerSel.value) diverseChk.checked = false;
   });
 
-  // Turn [1], [2] in the answer markdown into small superscript citation chips.
+  // ── suggestion bank ────────────────────────────────────────────────────────
+  const SUGGESTIONS = [
+    "What was Apple's total revenue in fiscal year 2025?",
+    "How did NVIDIA's data center revenue grow year over year?",
+    "What are Tesla's biggest competitive risks?",
+    "Which companies mention China as a significant business risk?",
+    "How does Microsoft describe its Azure cloud business?",
+    "What does Meta say about its AI infrastructure investments?",
+    "How do NVIDIA and AMD compare on AI-related regulatory risks?",
+    "What is Netflix's strategy for subscriber growth?",
+    "Which company has the highest gross margin?",
+    "How has Google Cloud revenue grown over recent quarters?",
+    "What does Broadcom say about its TSMC manufacturing dependency?",
+    "What are Intel's biggest business challenges?",
+    "How does Salesforce describe its Agentforce AI product?",
+    "What does Amazon say about the AWS business?",
+    "What does Oracle say about its cloud infrastructure strategy?",
+    "Which companies disclose significant cybersecurity risks?",
+    "How did Apple's revenue change between fiscal year 2024 and 2025?",
+    "What do Microsoft and Google say about AI capital expenditure?",
+    "How does AMD describe its data center GPU business?",
+    "Which companies discuss risks from AI regulation?",
+  ];
+
+  let activeSuggIdx = -1;
+
+  function renderSuggestions(query) {
+    const q = query.trim().toLowerCase();
+    const filtered = q
+      ? SUGGESTIONS.filter(s => s.toLowerCase().includes(q)).slice(0, 6)
+      : SUGGESTIONS.slice(0, 7);
+
+    if (!filtered.length) { suggestBox.classList.remove("open"); return; }
+
+    suggestBox.innerHTML = `<div class="suggestions-label">${q ? "Matching questions" : "Try asking"}</div>`;
+    filtered.forEach((s, i) => {
+      const div = document.createElement("div");
+      div.className = "suggestion";
+      div.dataset.idx = i;
+      if (q) {
+        // Bold the matching portion
+        const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+        div.innerHTML = s.replace(re, "<mark>$1</mark>");
+      } else {
+        div.textContent = s;
+      }
+      div.addEventListener("mousedown", e => {
+        e.preventDefault();
+        input.value = s;
+        closeSuggestions();
+        submitQuestion(s);
+      });
+      suggestBox.appendChild(div);
+    });
+    activeSuggIdx = -1;
+    suggestBox.classList.add("open");
+  }
+
+  function closeSuggestions() {
+    suggestBox.classList.remove("open");
+    activeSuggIdx = -1;
+  }
+
+  input.addEventListener("focus",  () => renderSuggestions(input.value));
+  input.addEventListener("input",  () => renderSuggestions(input.value));
+  input.addEventListener("blur",   () => setTimeout(closeSuggestions, 150));
+
+  input.addEventListener("keydown", e => {
+    const items = suggestBox.querySelectorAll(".suggestion");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeSuggIdx = Math.min(activeSuggIdx + 1, items.length - 1);
+      items.forEach((el, i) => el.classList.toggle("active", i === activeSuggIdx));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeSuggIdx = Math.max(activeSuggIdx - 1, -1);
+      items.forEach((el, i) => el.classList.toggle("active", i === activeSuggIdx));
+    } else if (e.key === "Enter") {
+      if (activeSuggIdx >= 0 && items[activeSuggIdx]) {
+        e.preventDefault();
+        input.value = items[activeSuggIdx].textContent.replace(/\s+/g, " ").trim();
+        closeSuggestions();
+        submitQuestion(input.value);
+      } else {
+        closeSuggestions();
+        submitQuestion(input.value);
+      }
+    } else if (e.key === "Escape") {
+      closeSuggestions();
+    }
+  });
+
+  // ── rendering helpers ──────────────────────────────────────────────────────
   function withCitations(html) {
     return html.replace(/\[(\d+)\]/g, '<sup class="cite">$1</sup>');
   }
 
-  function renderAnswer(data) {
+  function buildTurn(question, data) {
     const body = withCitations(marked.parse(data.answer));
 
-    // If ask.py auto-detected a company from the question text, show a small notice
-    // so the user understands why results are filtered.
     let filterNotice = "";
     if (data.filter_applied) {
       const f = data.filter_applied;
-      const label = f.ticker || (f["$and"] ? f["$and"].map(x => Object.values(x)[0]).join(" + ") : JSON.stringify(f));
-      filterNotice = `<div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:12px;">auto-filtered to: <span style="color:var(--accent)">${label}</span></div>`;
+      const label = f.ticker
+        || (f["$and"] ? f["$and"].map(x => Object.values(x)[0]).join(" + ") : JSON.stringify(f));
+      filterNotice = `<div class="filter-notice">auto-filtered to: <em>${label}</em></div>`;
     }
 
     const sourceItems = data.sources.map(s => {
       const badges = [
-        s.ticker && `<span class="source-badge">${s.ticker}</span>`,
-        s.form   && `<span class="source-badge">${s.form}</span>`,
-        s.period && `<span class="source-badge">${s.period}</span>`,
+        s.ticker  && `<span class="source-badge">${s.ticker}</span>`,
+        s.form    && `<span class="source-badge">${s.form}</span>`,
+        s.period  && `<span class="source-badge">${s.period}</span>`,
         s.section && `<span class="source-badge">${s.section}</span>`,
       ].filter(Boolean).join("");
-
       const link = s.source_url
-        ? `<a class="source-link" href="${s.source_url}" target="_blank" rel="noopener">↗ SEC filing</a>`
+        ? `<a class="source-link" href="${s.source_url}" target="_blank" rel="noopener">↗ filing</a>`
         : "";
-
-      const scores = `<span class="source-scores">sim ${s.similarity} · rank ${s.rerank_score}</span>`;
-
-      return `
-        <div class="source">
-          <span class="source-n">[${s.n}]</span>
-          <span class="source-meta">${badges}${link}</span>
-          ${scores}
-        </div>`;
+      return `<div class="source">
+        <span class="source-n">[${s.n}]</span>
+        <span>${badges}${link}</span>
+        <span class="source-scores">sim ${s.similarity} · rank ${s.rerank_score}</span>
+      </div>`;
     }).join("");
 
-    result.innerHTML = `
+    const turn = document.createElement("div");
+    turn.className = "turn";
+    turn.innerHTML = `
+      <div class="turn-question"><span>Q</span>${escHtml(question)}</div>
       ${filterNotice}
       <div class="answer">${body}</div>
       <div class="sources">
         <div class="sources-label">Sources</div>
         ${sourceItems}
       </div>`;
+    return turn;
   }
 
-  async function ask(question) {
-    if (!question.trim()) return;
+  function buildErrorTurn(question, msg) {
+    const turn = document.createElement("div");
+    turn.className = "turn";
+    turn.innerHTML = `
+      <div class="turn-question"><span>Q</span>${escHtml(question)}</div>
+      <div class="error">Couldn't reach the API. Is the server running on port 8000?<br>
+        <code style="font-size:12px">${escHtml(msg)}</code></div>`;
+    return turn;
+  }
+
+  function buildLoadingTurn(question) {
+    const turn = document.createElement("div");
+    turn.className = "turn";
+    turn.innerHTML = `
+      <div class="turn-question"><span>Q</span>${escHtml(question)}</div>
+      <div class="status">Searching the corpus…</div>`;
+    return turn;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // ── submit ─────────────────────────────────────────────────────────────────
+  async function submitQuestion(question) {
+    question = question.trim();
+    if (!question) return;
+    input.value = "";
+    closeSuggestions();
     button.disabled = true;
-    result.innerHTML = `<div class="status">Searching the corpus&hellip;</div>`;
+
+    const loadingTurn = buildLoadingTurn(question);
+    chat.appendChild(loadingTurn);
+    loadingTurn.scrollIntoView({ behavior: "smooth", block: "end" });
 
     const payload = {
       question,
-      ticker:  ticker.value  || "",
-      form:    form.value    || "",
-      diverse: diverse.checked,
+      ticker:  tickerSel.value  || "",
+      form:    formSel.value    || "",
+      diverse: diverseChk.checked,
     };
 
     try {
       const res = await fetch(API_URL, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body:    JSON.stringify(payload),
       });
       if (!res.ok) {
         const detail = await res.json().catch(() => ({}));
         throw new Error(detail.detail || `Server returned ${res.status}`);
       }
-      renderAnswer(await res.json());
+      const data = await res.json();
+      const realTurn = buildTurn(question, data);
+      chat.replaceChild(realTurn, loadingTurn);
+      realTurn.scrollIntoView({ behavior: "smooth", block: "end" });
     } catch (err) {
-      result.innerHTML = `<div class="error">Couldn't reach the API. Is the server running on port 8000?<br><code style="font-size:12px">${err.message}</code></div>`;
+      chat.replaceChild(buildErrorTurn(question, err.message), loadingTurn);
     } finally {
       button.disabled = false;
+      input.focus();
     }
   }
 
-  button.addEventListener("click", () => ask(input.value));
-  input.addEventListener("keydown", e => { if (e.key === "Enter") ask(input.value); });
-  document.querySelectorAll(".chip").forEach(chip => {
-    chip.addEventListener("click", () => { input.value = chip.textContent; ask(chip.textContent); });
-  });
+  button.addEventListener("click",  () => submitQuestion(input.value));
+  clearBtn.addEventListener("click", () => { chat.innerHTML = ""; });
 </script>
 </body>
 </html>
