@@ -4,3 +4,5 @@ python-dotenv>=1.0
 requests
 beautifulsoup4
 chromadb
+fastapi
+uvicorn[standard]
