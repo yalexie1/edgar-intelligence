@@ -87,6 +87,23 @@ def detect_tickers(question):
     return sorted(found)
 
 
+# Phrases that signal the user wants a cross-company comparison, even when no
+# specific ticker is named. These are unambiguous enough to safely auto-enable
+# diverse mode without false-positives on single-company questions.
+_CROSS_COMPANY_PHRASES = [
+    "which company", "which companies",
+    "what company", "what companies",
+    "compare companies", "across companies",
+    "between companies", "each company",
+]
+
+
+def is_cross_company_question(question):
+    """Return True if the question is asking for a comparison across companies."""
+    q = question.lower()
+    return any(phrase in q for phrase in _CROSS_COMPANY_PHRASES)
+
+
 def get_collection():
     """Connect to the Chroma vector store built in Phase 2."""
     client = chromadb.PersistentClient(path=CHROMA_DIR)
@@ -155,6 +172,8 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False):
         if len(tickers) == 1:
             where = {"ticker": tickers[0]}
         elif len(tickers) > 1 and not diverse:
+            diverse = True
+        elif len(tickers) == 0 and not diverse and is_cross_company_question(question):
             diverse = True
 
     # Diverse mode fetches more candidates so diversify_results has variety to pick from.
