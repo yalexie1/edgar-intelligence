@@ -206,16 +206,22 @@ def run(base_url, verbose=False, group_filter=None):
             print()
 
     # ── Summary ────────────────────────────────────────────────────────────────
-    factual_results = [r for r in results if r.get("group") != "abstain" and "error" not in r]
-    abstain_results = [r for r in results if r.get("group") == "abstain" and "error" not in r]
-    all_valid       = [r for r in results if "error" not in r]
+    n_errors = sum(1 for r in results if "error" in r)
+    if n_errors:
+        print(f"\n{YELLOW}Warning: {n_errors} case(s) failed with API errors and count as failures.{RESET}")
+
+    # Errored cases are kept in the denominator so the total is always the full
+    # dataset size. They score as failures on every metric.
+    factual_results = [r for r in results if r.get("group") != "abstain"]
+    abstain_results = [r for r in results if r.get("group") == "abstain"]
+    all_valid       = results   # full list; errored cases have correct=False
 
     n_total   = len(all_valid)
     n_pass    = sum(r["correct"] for r in all_valid)
     n_ret_hit = sum(r["retrieval_hit"] for r in factual_results)
     n_ans_hit = sum(r["answer_hit"] for r in factual_results)
     n_f       = len(factual_results)
-    n_ab_ok   = sum(r["abstain_correct"] for r in abstain_results if r["abstain_correct"] is not None)
+    n_ab_ok   = sum(1 for r in abstain_results if r.get("abstain_correct") is True)
     n_ab      = len(abstain_results)
 
     def pct(n, d):
@@ -247,7 +253,7 @@ def run(base_url, verbose=False, group_filter=None):
 
     dataset_map = {c["id"]: c for c in cases}
     saved = []
-    for r in all_valid:
+    for r in results:
         c = dataset_map.get(r["id"], {})
         saved.append({
             "id":              r["id"],
