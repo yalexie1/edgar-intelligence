@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EDGAR Intelligence</title>
+
+<!-- Type: an editorial serif for the wordmark, a clean sans for UI, mono for data/citations -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<!-- marked renders the markdown that Claude returns (bold, lists, headings) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+
+<style>
+  :root {
+    --bg: #eaeef2;
+    --surface: #ffffff;
+    --ink: #15202b;
+    --muted: #5b6675;
+    --line: #dde2e8;
+    --accent: #0e6b5c;        /* ledger green: trustworthy, financial, not a default */
+    --accent-soft: #e3f0ed;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  /* --- header --- */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 44px;
+    line-height: 1.05;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .sub { color: var(--muted); font-size: 16px; margin: 0 0 28px; }
+
+  /* --- ask row --- */
+  .ask { display: flex; gap: 10px; }
+  #question {
+    flex: 1;
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #question:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  #askBtn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    padding: 0 22px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.05s;
+  }
+  #askBtn:hover { opacity: 0.92; }
+  #askBtn:active { transform: translateY(1px); }
+  #askBtn:disabled { opacity: 0.5; cursor: default; }
+
+  /* --- example chips --- */
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* --- result --- */
+  #result { margin-top: 34px; }
+  .answer {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);   /* signature: a document's margin rule */
+    border-radius: 12px;
+    padding: 24px 28px;
+    animation: rise 0.35s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .answer { animation: none; } }
+
+  .answer h1, .answer h2, .answer h3 { font-family: var(--font-display); font-weight: 600; }
+  .answer h1 { font-size: 22px; margin: 4px 0 12px; }
+  .answer h2 { font-size: 19px; margin: 18px 0 8px; }
+  .answer h3 { font-size: 16px; margin: 16px 0 6px; }
+  .answer p, .answer li { font-size: 16px; }
+  .answer ul { padding-left: 20px; }
+  .answer strong { font-weight: 600; }
+
+  /* citation markers in the answer text */
+  .cite {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin: 0 1px;
+    vertical-align: super;
+    line-height: 1;
+  }
+
+  /* --- sources --- */
+  .sources { margin-top: 18px; }
+  .sources-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .source {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    padding: 4px 0;
+  }
+  .source b { color: var(--accent); font-weight: 500; }
+
+  /* --- states --- */
+  .status { color: var(--muted); font-family: var(--font-mono); font-size: 14px; padding: 8px 2px; }
+  .error {
+    background: #fdecec;
+    border: 1px solid #f3c2c2;
+    color: #8a2b2b;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 15px;
+  }
+
+  .foot { margin-top: 40px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="eyebrow">retrieval-augmented answers</div>
+    <h1>EDGAR Intelligence</h1>
+    <p class="sub">Ask a question about Apple&rsquo;s 2025 annual report (10-K). Answers come with citations to the filing.</p>
+
+    <div class="ask">
+      <input id="question" type="text" placeholder="How did gross margin change this year?" autocomplete="off" />
+      <button id="askBtn">Ask</button>
+    </div>
+
+    <div class="examples" id="examples">
+      <button class="chip">What are the main risk factors?</button>
+      <button class="chip">How did revenue change year over year?</button>
+      <button class="chip">What does the company say about competition?</button>
+    </div>
+
+    <div id="result"></div>
+
+    <p class="foot">Answers are generated from the filing text and cite their sources. Verify anything important against the original 10-K.</p>
+  </main>
+
+<script>
+  // Point this at your backend. Change it when you deploy.
+  const API_URL = "http://127.0.0.1:8000/query";
+
+  const input = document.getElementById("question");
+  const button = document.getElementById("askBtn");
+  const result = document.getElementById("result");
+
+  // Turn [1], [2] in the answer into small citation chips.
+  function withCitations(html) {
+    return html.replace(/\[(\d+)\]/g, '<sup class="cite">$1</sup>');
+  }
+
+  function renderAnswer(data) {
+    const body = withCitations(marked.parse(data.answer));
+    const sources = data.sources.map(s =>
+      `<div class="source"><b>[${s.n}]</b> chunk ${s.chunk} &middot; similarity ${s.similarity}</div>`
+    ).join("");
+    result.innerHTML = `
+      <div class="answer">${body}</div>
+      <div class="sources">
+        <div class="sources-label">Sources</div>
+        ${sources}
+      </div>`;
+  }
+
+  async function ask(question) {
+    if (!question.trim()) return;
+    button.disabled = true;
+    result.innerHTML = `<div class="status">Reading the filing&hellip;</div>`;
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+      if (!res.ok) throw new Error("Server returned " + res.status);
+      renderAnswer(await res.json());
+    } catch (err) {
+      result.innerHTML = `<div class="error">Couldn't reach the API. Is the server running on port 8000? (${err.message})</div>`;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  button.addEventListener("click", () => ask(input.value));
+  input.addEventListener("keydown", e => { if (e.key === "Enter") ask(input.value); });
+  document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => { input.value = chip.textContent; ask(chip.textContent); });
+  });
+</script>
+</body>
+</html>
