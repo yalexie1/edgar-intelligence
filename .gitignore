@@ -3,5 +3,7 @@
 venv/
 __pycache__/
 *.pyc
-data/
+data/chroma/
+data/chunks.json
+data/raw_10k.htm
 .claude/

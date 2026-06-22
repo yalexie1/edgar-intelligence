@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: edgar-rag-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    # Render spins free-tier services down after 15 min of inactivity.
+    # The ephemeral disk persists across sleep/wake cycles within a session,
+    # so the index survives idle periods. A new deployment triggers a rebuild
+    # (~7 cents in OpenAI embedding costs for 5 438 chunks).
+    #
+    # To avoid rebuilds on every deploy, uncomment the disk block below and
+    # upgrade to at least the Starter plan ($7/month + $0.25/month for 1 GB).
+    # The disk is mounted at exactly the path Chroma writes to, so the index
+    # persists across deployments and restarts.
+    #
+    # disk:
+    #   name: edgar-chroma
+    #   mountPath: /opt/render/project/src/data/chroma
+    #   sizeGB: 1
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false        # set manually in the Render dashboard
+      - key: ANTHROPIC_API_KEY
+        sync: false        # set manually in the Render dashboard
+      - key: PYTHON_VERSION
+        value: 3.11.0

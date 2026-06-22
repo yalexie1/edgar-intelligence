@@ -104,8 +104,9 @@
   <div class="loading">Loading eval results…</div>
 </div>
 
+<script src="config.js"></script>
 <script>
-const API = "http://127.0.0.1:8000";
+const API = window.EDGAR_API_URL || "http://127.0.0.1:8000";
 
 function pct(n, d) { return d ? Math.round(100 * n / d) : 0; }
 function fmtPct(n, d) { return pct(n, d) + "%"; }

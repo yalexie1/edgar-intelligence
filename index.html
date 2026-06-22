@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script src="config.js"></script>
 
 <style>
   :root {
@@ -507,7 +508,7 @@
 <p class="foot">Answers are grounded in the filing text and cite their sources. Verify anything important against the original SEC filing.</p>
 
 <script>
-  const API_URL    = "http://127.0.0.1:8000/query";
+  const API_URL    = (window.EDGAR_API_URL || "http://127.0.0.1:8000") + "/query";
   const input      = document.getElementById("question");
   const button     = document.getElementById("askBtn");
   const chat       = document.getElementById("chat");
