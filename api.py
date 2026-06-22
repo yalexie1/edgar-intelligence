@@ -46,6 +46,9 @@ collection = connect()
 class Query(BaseModel):
     question: str
     k: int = TOP_K
+    ticker: str = ""
+    form: str = ""
+    diverse: bool = False
 
 
 @app.get("/health")
@@ -58,16 +61,43 @@ def health():
 
 @app.post("/query")
 def query(q: Query):
-    """Answer one question from the filing, with sources."""
+    """Answer one question from the corpus, with cited sources."""
     if collection is None:
         raise HTTPException(503, "Index not built. Run `python embed_and_search.py` first.")
+
+    # Build an optional metadata filter from the request fields.
+    where = None
+    filters = []
+    if q.ticker:
+        filters.append({"ticker": q.ticker.upper()})
+    if q.form:
+        filters.append({"form": q.form.upper()})
+    if len(filters) == 1:
+        where = filters[0]
+    elif len(filters) > 1:
+        where = {"$and": filters}
+
     try:
-        answer, results = ask(collection, q.question, q.k)
+        answer, results, effective_where = ask(collection, q.question, where=where, k=q.k, diverse=q.diverse)
     except Exception as e:
         raise HTTPException(500, f"Failed to answer: {e}")
 
-    sources = [
-        {"n": i + 1, "chunk": r["index"], "similarity": round(r["similarity"], 3)}
-        for i, r in enumerate(results)
-    ]
-    return {"question": q.question, "answer": answer, "sources": sources}
+    sources = []
+    for i, r in enumerate(results):
+        meta = r["metadata"]
+        sources.append({
+            "n": i + 1,
+            "ticker": meta.get("ticker", ""),
+            "form": meta.get("form", ""),
+            "period": meta.get("period") or meta.get("filing_date", ""),
+            "section": meta.get("section", ""),
+            "source_url": meta.get("source_url", ""),
+            "similarity": round(r["similarity"], 3),
+            "rerank_score": round(r.get("rerank_score", r["similarity"]), 3),
+        })
+    return {
+        "question": q.question,
+        "answer": answer,
+        "sources": sources,
+        "filter_applied": effective_where,
+    }
