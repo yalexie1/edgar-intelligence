@@ -21,7 +21,7 @@
     "question": "What percentage did Microsoft's overall revenue grow in its most recent quarterly filing?",
     "expected_tickers": ["MSFT"],
     "answer_contains": [],
-    "notes": "Growth varies by quarter (12-18%); retrieval-only check — any MSFT quarter is valid"
+    "notes": "Growth varies by quarter (12-18%); retrieval-only check"
   },
   {
     "id": "googl_cloud_growth",
@@ -77,7 +77,279 @@
     "question": "What major business challenges does Intel describe in its most recent filings?",
     "expected_tickers": ["INTC"],
     "answer_contains": [],
-    "notes": "Retrieval-only; INTC is a harder retrieval case given competitive pressure language"
+    "notes": "Retrieval-only; INTC is a harder retrieval case"
+  },
+  {
+    "id": "aapl_iphone_revenue_fy2025",
+    "group": "factual",
+    "question": "What was Apple's iPhone revenue in fiscal year 2025?",
+    "expected_tickers": ["AAPL"],
+    "answer_contains": ["209"],
+    "notes": "10-K FY2025: iPhone net sales $209,586M"
+  },
+  {
+    "id": "aapl_americas_revenue",
+    "group": "factual",
+    "question": "What were Apple's Americas segment net sales in fiscal year 2025?",
+    "expected_tickers": ["AAPL"],
+    "answer_contains": ["178"],
+    "notes": "10-K FY2025: Americas net sales $178,353M"
+  },
+  {
+    "id": "avgo_tsmc_concentration",
+    "group": "factual",
+    "question": "What percentage of Broadcom's wafers were manufactured by TSMC?",
+    "expected_tickers": ["AVGO"],
+    "answer_contains": ["95"],
+    "notes": "10-Q: TSMC manufactured approximately 95% of Broadcom's wafers"
+  },
+  {
+    "id": "googl_total_revenue_q3cy25",
+    "group": "factual",
+    "question": "What was Google's total revenue in the third quarter of calendar year 2025?",
+    "expected_tickers": ["GOOGL"],
+    "answer_contains": ["102.3"],
+    "notes": "10-Q 2025-09: revenues $102.3B"
+  },
+  {
+    "id": "nvda_datacenter_fy2025_fullyear",
+    "group": "factual",
+    "question": "By what percentage did NVIDIA's data center computing revenue grow in full-year fiscal year 2025?",
+    "expected_tickers": ["NVDA"],
+    "answer_contains": ["162"],
+    "notes": "10-K FY2025: data center compute +162% YoY driven by Hopper demand"
+  },
+  {
+    "id": "msft_ai_risk_disclosure",
+    "group": "factual",
+    "question": "What risks does Microsoft disclose related to artificial intelligence in its SEC filings?",
+    "expected_tickers": ["MSFT"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; MSFT 10-Q discusses AI regulation, bias, safety risks"
+  },
+  {
+    "id": "meta_ai_investment",
+    "group": "factual",
+    "question": "What does Meta say about its capital expenditure plans for AI infrastructure?",
+    "expected_tickers": ["META"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; META discusses significantly increasing capex for AI in 2026"
+  },
+  {
+    "id": "amzn_aws_description",
+    "group": "factual",
+    "question": "How does Amazon describe the AWS business and its role in the company?",
+    "expected_tickers": ["AMZN"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AWS segment description in 10-K/10-Q"
+  },
+  {
+    "id": "tsla_energy_business",
+    "group": "factual",
+    "question": "How does Tesla describe its energy generation and storage business segment?",
+    "expected_tickers": ["TSLA"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; TSLA 10-K/10-Q covers energy segment"
+  },
+  {
+    "id": "orcl_cloud_strategy",
+    "group": "factual",
+    "question": "How does Oracle describe its cloud infrastructure and applications strategy?",
+    "expected_tickers": ["ORCL"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; Oracle 10-Q covers OCI and cloud applications growth"
+  },
+  {
+    "id": "crm_revenue_segments",
+    "group": "factual",
+    "question": "What are Salesforce's primary revenue categories as described in its filings?",
+    "expected_tickers": ["CRM"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; CRM reports subscription and professional services revenue"
+  },
+  {
+    "id": "nflx_ad_tier",
+    "group": "factual",
+    "question": "What does Netflix say about its advertising-supported subscription tier?",
+    "expected_tickers": ["NFLX"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; NFLX discusses ads plan in 10-K/10-Q"
+  },
+  {
+    "id": "amd_data_center_revenue",
+    "group": "factual",
+    "question": "How does AMD describe its data center segment performance in recent filings?",
+    "expected_tickers": ["AMD"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AMD 10-Q covers MI300 and EPYC server processor growth"
+  },
+  {
+    "id": "intc_foundry_strategy",
+    "group": "factual",
+    "question": "What does Intel say about its foundry services business in its SEC filings?",
+    "expected_tickers": ["INTC"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; Intel Foundry Services discussed in 10-K"
+  },
+  {
+    "id": "avgo_ai_networking",
+    "group": "factual",
+    "question": "How does Broadcom describe its AI networking and custom accelerator business?",
+    "expected_tickers": ["AVGO"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AVGO 10-Q discusses AI-related networking revenue growth"
+  },
+  {
+    "id": "msft_azure_description",
+    "group": "factual",
+    "question": "How does Microsoft describe the Azure cloud platform in its SEC filings?",
+    "expected_tickers": ["MSFT"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; Azure described in Intelligent Cloud segment discussion"
+  },
+  {
+    "id": "meta_vr_hardware_risk",
+    "group": "factual",
+    "question": "What risks does Meta disclose related to its VR and hardware products?",
+    "expected_tickers": ["META"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; META 10-Q discusses hardware supply chain and adoption risks"
+  },
+  {
+    "id": "googl_regulatory_risk",
+    "group": "factual",
+    "question": "What regulatory and antitrust risks does Google disclose in its filings?",
+    "expected_tickers": ["GOOGL"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; GOOGL discusses DOJ antitrust, EU DMA, search regulation"
+  },
+  {
+    "id": "amzn_tariff_risk",
+    "group": "factual",
+    "question": "How does Amazon describe the risk of tariffs and trade policy on its business?",
+    "expected_tickers": ["AMZN"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AMZN 10-K/10-Q covers tariff and supply chain risk"
+  },
+  {
+    "id": "tsla_autonomous_driving",
+    "group": "factual",
+    "question": "How does Tesla describe its autonomous driving technology and the associated risks?",
+    "expected_tickers": ["TSLA"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; TSLA FSD and autopilot risk disclosures in 10-K"
+  },
+  {
+    "id": "orcl_database_competition",
+    "group": "factual",
+    "question": "How does Oracle describe competition in the database and cloud markets?",
+    "expected_tickers": ["ORCL"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; Oracle risk factors cover cloud and database competition"
+  },
+  {
+    "id": "crm_agentforce",
+    "group": "factual",
+    "question": "What does Salesforce say about its Agentforce AI platform in recent filings?",
+    "expected_tickers": ["CRM"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; CRM 10-Q mentions Agentforce as AI agent product"
+  },
+  {
+    "id": "nvda_supply_chain_risk",
+    "group": "factual",
+    "question": "What supply chain risks does NVIDIA disclose related to its semiconductor manufacturing?",
+    "expected_tickers": ["NVDA"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; NVDA depends on TSMC and discusses concentration risk"
+  },
+  {
+    "id": "aapl_services_revenue",
+    "group": "factual",
+    "question": "How does Apple describe its Services segment and what drives its growth?",
+    "expected_tickers": ["AAPL"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AAPL 10-K discusses App Store, iCloud, Apple Music in Services"
+  },
+  {
+    "id": "nflx_content_spending",
+    "group": "factual",
+    "question": "What does Netflix say about its content spending and programming obligations?",
+    "expected_tickers": ["NFLX"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; NFLX 10-K/10-Q covers content asset amortization and commitments"
+  },
+  {
+    "id": "amd_mi300_ramp",
+    "group": "factual",
+    "question": "How does AMD describe the ramp of its MI300 AI accelerator products?",
+    "expected_tickers": ["AMD"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AMD 10-Q covers MI300 data center GPU growth"
+  },
+  {
+    "id": "meta_dau_description",
+    "group": "factual",
+    "question": "How does Meta describe its daily active people metric in recent filings?",
+    "expected_tickers": ["META"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; META reports DAP (daily active people) across family of apps"
+  },
+  {
+    "id": "amzn_advertising_segment",
+    "group": "factual",
+    "question": "How does Amazon describe its advertising services business?",
+    "expected_tickers": ["AMZN"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AMZN advertising services is fast-growing segment in 10-Q"
+  },
+  {
+    "id": "msft_copilot_description",
+    "group": "factual",
+    "question": "How does Microsoft describe its Copilot AI products in its SEC filings?",
+    "expected_tickers": ["MSFT"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; MSFT 10-Q/10-K mentions Copilot across productivity and cloud"
+  },
+  {
+    "id": "orcl_remaining_performance",
+    "group": "factual",
+    "question": "What does Oracle report about its remaining performance obligations in recent filings?",
+    "expected_tickers": ["ORCL"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; ORCL 10-Q discloses RPO as forward revenue indicator"
+  },
+  {
+    "id": "tsla_gigafactory_description",
+    "group": "factual",
+    "question": "How does Tesla describe its Gigafactory manufacturing strategy?",
+    "expected_tickers": ["TSLA"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; TSLA 10-K discusses Gigafactory locations and capacity"
+  },
+  {
+    "id": "avgo_vmware_integration",
+    "group": "factual",
+    "question": "How does Broadcom describe the integration of VMware following its acquisition?",
+    "expected_tickers": ["AVGO"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; AVGO completed VMware acquisition and discusses integration in 10-Q"
+  },
+  {
+    "id": "crm_international_revenue",
+    "group": "factual",
+    "question": "What does Salesforce report about its international revenue mix?",
+    "expected_tickers": ["CRM"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; CRM 10-Q breaks out Americas vs international revenue"
+  },
+  {
+    "id": "intc_restructuring",
+    "group": "factual",
+    "question": "What restructuring actions has Intel announced in its recent SEC filings?",
+    "expected_tickers": ["INTC"],
+    "answer_contains": [],
+    "notes": "Retrieval-only; INTC announced workforce reductions and cost restructuring"
   },
   {
     "id": "nvda_datacenter_trend",
@@ -95,6 +367,78 @@
     "expected_tickers": ["AAPL"],
     "answer_contains": ["china"],
     "notes": "FY2025 10-K: Greater China net sales $64,377M, down vs FY2024"
+  },
+  {
+    "id": "msft_revenue_multi_quarter",
+    "group": "temporal",
+    "question": "How has Microsoft's overall revenue growth rate changed across the last three or four quarterly filings?",
+    "expected_tickers": ["MSFT"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "Tests multi-period MSFT retrieval across recent 10-Qs"
+  },
+  {
+    "id": "meta_capex_trend",
+    "group": "temporal",
+    "question": "How has Meta's capital expenditure changed across its most recent quarterly filings?",
+    "expected_tickers": ["META"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "META capex has been rising significantly for AI infrastructure across quarters"
+  },
+  {
+    "id": "googl_cloud_multi_quarter",
+    "group": "temporal",
+    "question": "How has Google Cloud revenue growth trended across multiple recent quarters?",
+    "expected_tickers": ["GOOGL"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "GOOGL 10-Qs show accelerating cloud growth; tests multi-period retrieval"
+  },
+  {
+    "id": "nflx_revenue_trend",
+    "group": "temporal",
+    "question": "How has Netflix's total revenue grown quarter over quarter over the past year?",
+    "expected_tickers": ["NFLX"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "Tests multi-period NFLX retrieval; revenue has grown steadily"
+  },
+  {
+    "id": "amd_revenue_trend",
+    "group": "temporal",
+    "question": "How has AMD's total revenue trended across multiple recent quarterly filings?",
+    "expected_tickers": ["AMD"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "AMD data center growth has driven overall revenue higher across recent quarters"
+  },
+  {
+    "id": "nvda_gross_margin_trend",
+    "group": "temporal",
+    "question": "How has NVIDIA's gross margin percentage changed across recent quarterly filings?",
+    "expected_tickers": ["NVDA"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "NVDA gross margins expanded significantly with data center mix shift"
+  },
+  {
+    "id": "aapl_services_growth_trend",
+    "group": "temporal",
+    "question": "How has Apple's Services segment revenue grown over the past two fiscal years?",
+    "expected_tickers": ["AAPL"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "Tests multi-period retrieval for AAPL Services across FY2024 and FY2025"
+  },
+  {
+    "id": "crm_revenue_trend",
+    "group": "temporal",
+    "question": "How has Salesforce's revenue growth rate trended across the last several quarterly filings?",
+    "expected_tickers": ["CRM"],
+    "answer_contains": [],
+    "min_unique_periods": 2,
+    "notes": "CRM revenue growth has moderated; tests multi-period retrieval"
   },
   {
     "id": "china_risk_companies",
@@ -131,6 +475,136 @@
     "notes": "Two named companies; tests capex/investment language retrieval"
   },
   {
+    "id": "cross_company_cybersecurity_risk",
+    "group": "cross_company",
+    "question": "Which companies describe cybersecurity breaches or data privacy incidents as material risks?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Cybersecurity risk is broad; diverse should surface multiple companies"
+  },
+  {
+    "id": "cross_company_ai_regulation",
+    "group": "cross_company",
+    "question": "Which companies discuss the EU AI Act or other AI-specific regulations as a business risk?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "AI regulation is disclosed by NVDA, AMD, META, MSFT and others"
+  },
+  {
+    "id": "cross_company_talent_risk",
+    "group": "cross_company",
+    "question": "Which companies identify competition for engineering talent as a significant risk factor?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Talent/hiring risk is commonly disclosed across tech companies"
+  },
+  {
+    "id": "cross_company_climate_risk",
+    "group": "cross_company",
+    "question": "Which companies discuss climate change or environmental regulation as a business risk?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Climate risk disclosures present in multiple 10-K filings"
+  },
+  {
+    "id": "nvda_vs_intc_strategy",
+    "group": "cross_company",
+    "question": "How do NVIDIA and Intel compare in describing their strategies for the AI chip market?",
+    "expected_tickers": ["NVDA", "INTC"],
+    "answer_contains": [],
+    "notes": "Two named chip companies; tests whether INTC passages are retrieved"
+  },
+  {
+    "id": "cross_company_legal_proceedings",
+    "group": "cross_company",
+    "question": "Which companies report significant ongoing legal proceedings or litigation in their filings?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Legal proceedings section present in multiple 10-K/10-Q filings"
+  },
+  {
+    "id": "cross_company_rd_spending",
+    "group": "cross_company",
+    "question": "Which companies describe the largest increase in research and development spending?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "R&D expense growth discussed in MD&A across multiple companies"
+  },
+  {
+    "id": "msft_amzn_cloud_compare",
+    "group": "cross_company",
+    "question": "How do Microsoft and Amazon each describe the growth of their cloud businesses?",
+    "expected_tickers": ["MSFT", "AMZN"],
+    "answer_contains": [],
+    "notes": "Azure vs AWS; tests two named companies in cloud segment discussion"
+  },
+  {
+    "id": "cross_company_tariff_risk",
+    "group": "cross_company",
+    "question": "Which companies describe tariffs or trade restrictions as a material business risk?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Tariff risk disclosed by AAPL, AVGO, AMZN and others with China exposure"
+  },
+  {
+    "id": "meta_vs_googl_advertising",
+    "group": "cross_company",
+    "question": "How do Meta and Google each describe competition and risks in the digital advertising market?",
+    "expected_tickers": ["META", "GOOGL"],
+    "answer_contains": [],
+    "notes": "Two named advertising platforms; tests cross-company competitive disclosure"
+  },
+  {
+    "id": "cross_company_geopolitical_risk",
+    "group": "cross_company",
+    "question": "Which companies identify geopolitical instability or export controls as significant risks?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Export controls and geopolitical risk disclosed by NVDA, AVGO, AAPL, AMD"
+  },
+  {
+    "id": "nvda_vs_amd_gross_margin",
+    "group": "cross_company",
+    "question": "How do NVIDIA and AMD compare in terms of their reported gross margin percentages?",
+    "expected_tickers": ["NVDA", "AMD"],
+    "answer_contains": [],
+    "notes": "Tests numeric comparison across two named chip companies"
+  },
+  {
+    "id": "cross_company_operating_margin",
+    "group": "cross_company",
+    "question": "Which companies report the highest operating income margins among the corpus companies?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Operating margin comparison across the corpus; diverse mode required"
+  },
+  {
+    "id": "orcl_vs_crm_cloud",
+    "group": "cross_company",
+    "question": "How do Oracle and Salesforce each describe their cloud subscription revenue models?",
+    "expected_tickers": ["ORCL", "CRM"],
+    "answer_contains": [],
+    "notes": "Two enterprise SaaS companies; tests cross-company cloud SaaS comparison"
+  },
+  {
+    "id": "cross_company_ai_product_strategy",
+    "group": "cross_company",
+    "question": "Which companies describe a specific AI product or platform as a key growth driver in their filings?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "AI product strategy disclosed across MSFT Copilot, GOOGL Gemini, META AI, CRM Agentforce"
+  },
+  {
     "id": "abstain_capital_gains_tax",
     "group": "abstain",
     "question": "What is the current US capital gains tax rate for individual investors?",
@@ -165,5 +639,212 @@
     "answer_contains": [],
     "should_abstain": true,
     "notes": "Forward-looking macro prediction; not answerable from SEC filings"
+  },
+  {
+    "id": "abstain_nvda_stock_price",
+    "group": "abstain",
+    "question": "What is NVIDIA's current market capitalization?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Real-time market cap not in SEC filings"
+  },
+  {
+    "id": "abstain_earnings_call",
+    "group": "abstain",
+    "question": "What did Satya Nadella say on Microsoft's most recent earnings call?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Earnings call transcripts are not included in 10-Q/10-K/8-K corpus"
+  },
+  {
+    "id": "abstain_analyst_rating",
+    "group": "abstain",
+    "question": "What is Goldman Sachs's price target for Apple stock?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Analyst opinions and price targets are not in SEC filings"
+  },
+  {
+    "id": "abstain_tsmc_financials",
+    "group": "abstain",
+    "question": "What was TSMC's revenue in 2024?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "TSMC is not in the corpus; only mentioned as a supplier by other companies"
+  },
+  {
+    "id": "abstain_aapl_revenue_2010",
+    "group": "abstain",
+    "question": "What was Apple's revenue in fiscal year 2010?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Too old for the corpus window (last ~2 years only)"
+  },
+  {
+    "id": "abstain_qualcomm_chips",
+    "group": "abstain",
+    "question": "What does Qualcomm say about its Snapdragon chip roadmap?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Qualcomm not in corpus"
+  },
+  {
+    "id": "abstain_spacex",
+    "group": "abstain",
+    "question": "What are SpaceX's plans for its Starlink satellite internet business?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "SpaceX is private and not in corpus"
+  },
+  {
+    "id": "abstain_crypto_price",
+    "group": "abstain",
+    "question": "What is the current price of Bitcoin?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Real-time crypto price data not in SEC filings"
+  },
+  {
+    "id": "abstain_unemployment_rate",
+    "group": "abstain",
+    "question": "What is the current US unemployment rate?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Macroeconomic government statistics not in SEC filings"
+  },
+  {
+    "id": "abstain_arm_ipo",
+    "group": "abstain",
+    "question": "What did ARM Holdings disclose about its business at the time of its IPO?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "ARM not in corpus"
+  },
+  {
+    "id": "abstain_msft_linkedin_revenue",
+    "group": "abstain",
+    "question": "What is LinkedIn's standalone revenue reported by Microsoft in its most recent proxy statement?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Proxy statements (DEF 14A) are not in the 10-K/10-Q/8-K corpus"
+  },
+  {
+    "id": "abstain_aapl_product_release_date",
+    "group": "abstain",
+    "question": "When will Apple release the iPhone 18?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Future product launch dates not disclosed in SEC filings"
+  },
+  {
+    "id": "abstain_oil_price",
+    "group": "abstain",
+    "question": "What is the current price of crude oil per barrel?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Commodity price data not in SEC filings"
+  },
+  {
+    "id": "abstain_googl_employee_count_2010",
+    "group": "abstain",
+    "question": "How many employees did Google have in 2010?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Too old for the corpus window; historical headcount not in recent filings"
+  },
+  {
+    "id": "abstain_nvda_twitter_sentiment",
+    "group": "abstain",
+    "question": "What is the general sentiment about NVIDIA on social media right now?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Social media content not in SEC filings"
+  },
+  {
+    "id": "abstain_tsla_elon_musk_tweets",
+    "group": "abstain",
+    "question": "What has Elon Musk tweeted recently about Tesla's robotaxi plans?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Social media posts not in SEC filings"
+  },
+  {
+    "id": "abstain_meta_zuckerberg_compensation",
+    "group": "abstain",
+    "question": "What was Mark Zuckerberg's total compensation in fiscal year 2024 according to the proxy statement?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Proxy statements not in corpus; executive comp in DEF 14A not 10-K"
+  },
+  {
+    "id": "abstain_gdp_growth",
+    "group": "abstain",
+    "question": "What was US GDP growth in 2025?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Macroeconomic government statistics not in SEC filings"
+  },
+  {
+    "id": "abstain_aapl_2030_forecast",
+    "group": "abstain",
+    "question": "What will Apple's revenue be in fiscal year 2030?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Long-range forward forecast beyond any disclosure in the corpus"
+  },
+  {
+    "id": "abstain_private_company",
+    "group": "abstain",
+    "question": "What were Anthropic's revenues in 2024?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Anthropic is private and not in corpus"
+  },
+  {
+    "id": "abstain_google_news_article",
+    "group": "abstain",
+    "question": "According to the New York Times, how is Google dealing with AI competition from OpenAI?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "News articles not in SEC filings corpus"
+  },
+  {
+    "id": "abstain_congressional_testimony",
+    "group": "abstain",
+    "question": "What did Mark Zuckerberg say during his congressional testimony about data privacy?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "should_abstain": true,
+    "notes": "Congressional testimony transcripts not in SEC filings"
+  },
+  {
+    "id": "cross_company_international_revenue_mix",
+    "group": "cross_company",
+    "question": "Which companies derive the largest share of revenue from international markets outside the United States?",
+    "expected_tickers": [],
+    "answer_contains": [],
+    "min_unique_tickers": 3,
+    "notes": "Geographic revenue breakdown disclosed by most companies; tests diverse retrieval on segment data"
   }
 ]
