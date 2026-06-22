@@ -6,4 +6,4 @@ window.EDGAR_API_URL = (
   window.location.hostname === "127.0.0.1" ||
   window.location.protocol === "file:"
 ) ? "http://127.0.0.1:8000"
-  : "https://REPLACE_WITH_RENDER_URL.onrender.com";
+  : "https://edgar-intelligence.onrender.com";
