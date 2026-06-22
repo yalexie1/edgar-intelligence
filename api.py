@@ -52,6 +52,7 @@ class Query(BaseModel):
     ticker: str = ""
     form: str = ""
     diverse: bool = False
+    history: list = []  # prior turns: [{"question": str, "answer": str}, ...]
 
 
 @app.get("/health")
@@ -81,7 +82,7 @@ def query(q: Query):
         where = {"$and": filters}
 
     try:
-        answer, results, effective_where = ask(collection, q.question, where=where, k=q.k, diverse=q.diverse)
+        answer, results, effective_where = ask(collection, q.question, where=where, k=q.k, diverse=q.diverse, history=q.history)
     except Exception as e:
         raise HTTPException(500, f"Failed to answer: {e}")
 

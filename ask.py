@@ -126,8 +126,13 @@ def fmt_source(meta):
     return " | ".join(parts)
 
 
-def build_prompt(question, results):
-    """Assemble the question and retrieved passages into a grounded prompt."""
+def build_prompt(question, results, history=None):
+    """Assemble the question and retrieved passages into a grounded prompt.
+
+    history is an optional list of {"question": str, "answer": str} dicts
+    representing prior turns. The model sees them for context but is instructed
+    to ground its answer in the freshly retrieved passages, not the prior answers.
+    """
     passages = []
     for n, r in enumerate(results, start=1):
         meta = r["metadata"]
@@ -139,6 +144,20 @@ def build_prompt(question, results):
         passages.append(f"{header}\n{r['text']}")
     context = "\n\n".join(passages)
 
+    history_section = ""
+    if history:
+        turns = []
+        for h in history:
+            # Truncate long prior answers so the prompt doesn't balloon
+            prior_answer = h["answer"][:500] + ("…" if len(h["answer"]) > 500 else "")
+            turns.append(f"User: {h['question']}\nAssistant: {prior_answer}")
+        history_section = (
+            "Prior conversation (use for context only — "
+            "answer the NEW question using the passages below):\n"
+            + "\n\n".join(turns)
+            + "\n\n"
+        )
+
     return f"""You are a financial analyst assistant with access to SEC filings from 13 large public companies (AAPL, MSFT, GOOGL, AMZN, META, NVDA, AVGO, TSLA, ORCL, CRM, AMD, NFLX, INTC). Answer ONLY from the numbered passages below.
 
 Answer contract — follow every rule:
@@ -149,7 +168,7 @@ Answer contract — follow every rule:
 5. If the passages feel off-topic or similarities are low, flag that the evidence is thin.
 6. Be concise and factual. Prefer exact figures and direct quotes.
 
-Passages:
+{history_section}Passages:
 {context}
 
 Question: {question}
@@ -157,7 +176,7 @@ Question: {question}
 Answer (cite each claim with passage number, quote, source, and confidence):"""
 
 
-def ask(collection, question, where=None, k=TOP_K, diverse=False):
+def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
     """Retrieve evidence and produce a grounded, cited answer.
 
     Returns (answer_text, results_list, effective_where). Each result dict has:
@@ -166,9 +185,23 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False):
     If no explicit `where` filter is given, the question is scanned for company
     names. A single named company → filter to that ticker. Multiple named
     companies → enable diverse mode so each gets at least one evidence slot.
+
+    history is an optional list of {"question": str, "answer": str} dicts from
+    prior turns. When the current question doesn't name a company, the history
+    is scanned for one so retrieval stays focused on the right ticker across
+    follow-up questions.
     """
     if where is None:
         tickers = detect_tickers(question)
+
+        # Fall back to the company named in prior turns when the follow-up
+        # question doesn't explicitly name one (e.g. "how did they explain that?").
+        if not tickers and history:
+            for h in reversed(history):
+                tickers = detect_tickers(h["question"])
+                if tickers:
+                    break
+
         if len(tickers) == 1:
             where = {"ticker": tickers[0]}
         elif len(tickers) > 1 and not diverse:
@@ -198,7 +231,7 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False):
             where,
         )
 
-    prompt = build_prompt(question, results)
+    prompt = build_prompt(question, results, history=history)
     client = Anthropic()  # reads ANTHROPIC_API_KEY from the environment
     msg = client.messages.create(
         model=ANSWER_MODEL,
