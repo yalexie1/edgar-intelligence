@@ -201,9 +201,13 @@ def run(base_url, verbose=False, group_filter=None):
             data = call_api(base_url, case["question"])
         except urllib.error.URLError as e:
             print(f"{RED}API ERROR: {e}{RESET}")
-            results.append({"id": cid, "group": group, "correct": False,
-                             "retrieval_hit": False, "answer_hit": False,
-                             "abstain_correct": None, "error": str(e)})
+            results.append({
+                "id": cid, "group": group, "correct": False,
+                "retrieval_hit": False, "answer_hit": False,
+                "abstain_correct": None, "unique_tickers": [],
+                "filter_applied": None, "answer": "", "elapsed": 0,
+                "error": str(e),
+            })
             continue
         elapsed = time.time() - t0
 

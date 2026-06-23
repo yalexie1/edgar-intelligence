@@ -119,9 +119,13 @@ def health():
     return {"status": "ok", "chunks": collection.count()}
 
 
+def _is_localhost(request: Request) -> bool:
+    return (request.client and request.client.host in ("127.0.0.1", "::1"))
+
+
 @app.post("/query")
-@limiter.limit("10/minute")
-@limiter.limit("200/day")
+@limiter.limit("10/minute", exempt_when=_is_localhost)
+@limiter.limit("200/day",   exempt_when=_is_localhost)
 def query(request: Request, q: Query):
     """Answer one question from the corpus, with cited sources."""
     # Fast validation — no LLM cost.
