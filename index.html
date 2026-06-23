@@ -354,6 +354,16 @@
 
   /* status / error */
   .status { color: var(--muted); font-family: var(--font-mono); font-size: 13px; padding: 8px 2px; }
+  .wake-notice {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: .8;
+  }
   .error { background: #fdecec; border: 1px solid #f3c2c2; color: #8a2b2b; border-radius: 10px; padding: 12px 16px; font-size: 14px; }
 
   /* ── follow-up bar (appended after each answer) ── */
@@ -678,12 +688,15 @@
     return turn;
   }
 
-  function buildErrorTurn(question, msg) {
+  function buildErrorTurn(question, msg, isNetworkError) {
+    const explanation = isNetworkError
+      ? `The backend didn't respond. If this is your first request in a while, it may still be waking up — wait 30–60 s and try again.`
+      : `The server returned an error.`;
     const turn = document.createElement("div");
     turn.className = "turn";
     turn.innerHTML = `
       <div class="turn-question"><span>Q</span>${escHtml(question)}</div>
-      <div class="error">Couldn't reach the API. Is the server running on port 8000?<br>
+      <div class="error">${explanation}<br>
         <code style="font-size:12px">${escHtml(msg)}</code></div>`;
     return turn;
   }
@@ -737,6 +750,7 @@
     button.disabled = true;
 
     const loadingTurn = buildLoadingTurn(question);
+    const statusEl = loadingTurn.querySelector(".status");
     chat.appendChild(loadingTurn);
     loadingTurn.scrollIntoView({ behavior: "smooth", block: "end" });
 
@@ -750,24 +764,54 @@
       history: conversationHistory.slice(-3),
     };
 
-    try {
-      const res = await fetch(API_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const detail = await res.json().catch(() => ({}));
-        throw new Error(detail.detail || `Server returned ${res.status}`);
+    // After 8s with no response, explain the cold-start situation.
+    const slowTimer = setTimeout(() => {
+      statusEl.innerHTML = `Searching the corpus…
+        <span class="wake-notice">The backend is waking up — Render's free tier spins down after ~15 min of inactivity. The first request after a break can take 30–60 s. Hang tight.</span>`;
+    }, 8000);
+
+    const MAX_RETRIES = 3;
+    let lastErr = null;
+    let data = null;
+
+    // Retry loop: retries on network errors only (not HTTP errors like 429/503).
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const res = await fetch(API_URL, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          const err = new Error(detail.detail || `Server returned ${res.status}`);
+          err.isHttp = true;
+          throw err;
+        }
+        data = await res.json();
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (err.isHttp || attempt >= MAX_RETRIES) break;
+        // Network error — update status and retry after a short pause.
+        statusEl.innerHTML = `Reconnecting… (attempt ${attempt} of ${MAX_RETRIES})
+          <span class="wake-notice">The backend may still be starting up. Retrying in 5 s.</span>`;
+        await new Promise(r => setTimeout(r, 5000));
       }
-      const data = await res.json();
-      const realTurn = buildTurn(question, data);
-      chat.replaceChild(realTurn, loadingTurn);
-      // Store this turn in history so follow-ups have context
-      conversationHistory.push({ question, answer: data.answer });
-    } catch (err) {
-      chat.replaceChild(buildErrorTurn(question, err.message), loadingTurn);
+    }
+
+    try {
+      if (data) {
+        const realTurn = buildTurn(question, data);
+        chat.replaceChild(realTurn, loadingTurn);
+        // Store this turn in history so follow-ups have context
+        conversationHistory.push({ question, answer: data.answer });
+      } else {
+        const isNetworkError = lastErr && !lastErr.isHttp;
+        chat.replaceChild(buildErrorTurn(question, lastErr.message, isNetworkError), loadingTurn);
+      }
     } finally {
+      clearTimeout(slowTimer);
       button.disabled = false;
       // Re-attach follow-up bar below the latest turn
       attachFollowupBar();
