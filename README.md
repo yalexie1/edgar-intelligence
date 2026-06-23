@@ -4,6 +4,8 @@ Ask plain-English questions about SEC filings from 13 large public companies and
 
 Try at: https://edgar-intelligence.vercel.app/
 
+NOTE: The backend is hosted on Render and spins down every 15 minutes when there's no activity. Please give up to 2-3 minutes for the backend to reboot if you're accessing the site for the first time.
+
 ## What it does
 
 - Searches 5,438 embedded chunks from 10-K, 10-Q, and 8-K filings across AAPL, MSFT, GOOGL, AMZN, META, NVDA, AVGO, TSLA, ORCL, CRM, AMD, NFLX, and INTC
