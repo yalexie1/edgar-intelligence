@@ -48,11 +48,16 @@ Create a local `.env` file with your API keys:
 cp .env.example .env
 ```
 
-Then fill in:
+Then fill in your API keys and any optional settings:
 
 ```env
+# Required
 OPENAI_API_KEY=your_openai_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Optional — comma-separated extra CORS origins beyond the defaults.
+# Defaults already include the deployed Vercel frontend and common local dev ports.
+# ALLOWED_ORIGINS=https://myapp.example.com,http://localhost:4000
 ```
 
 The repository includes the processed SEC corpus at:

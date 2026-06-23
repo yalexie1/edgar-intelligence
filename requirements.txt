@@ -6,3 +6,4 @@ beautifulsoup4
 chromadb
 fastapi
 uvicorn[standard]
+slowapi

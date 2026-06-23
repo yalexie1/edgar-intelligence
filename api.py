@@ -1,42 +1,96 @@
 """
-Phase 4: serve the RAG pipeline over HTTP with FastAPI.
+FastAPI backend for EDGAR Intelligence.
 
-This wraps the same ask() logic from Phase 3 in a web server, so a question comes
-in as an HTTP request and the cited answer comes back as JSON. That is what lets
-a webpage (Phase 5) or any other program use the system, not just you at a terminal.
-
-Run:  uvicorn api:app --reload --port 8000
-Then: open http://127.0.0.1:8000/docs for an interactive page to test it.
+Endpoints:
+  POST /query          — answer a question from the corpus (rate-limited)
+  GET  /health         — instant liveness check
+  GET  /evals/results  — last eval run results (for the dashboard)
 """
 
+import datetime
 import json
+import os
 from pathlib import Path
 
 import chromadb
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from ask import ask
 from embed_and_search import CHROMA_DIR, COLLECTION, TOP_K
 
 load_dotenv()
 
-app = FastAPI(title="EDGAR Intelligence API")
+# ── rate limiting (per-IP) ─────────────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address)
 
-# Let a browser frontend on another port (Phase 5) call this API.
-# "*" is fine for local development; restrict it to your real domain before deploying.
+# ── CORS ───────────────────────────────────────────────────────────────────────
+# Hardcoded defaults cover the deployed Vercel frontend and common local dev ports.
+# Set ALLOWED_ORIGINS in the environment to add more origins (comma-separated).
+_default_origins = [
+    "https://edgar-intelligence.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5500",
+    "http://localhost:8080",  # python -m http.server 8080
+]
+_extra_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+CORS_ORIGINS = list(set(_default_origins + _extra_origins))
+
+# ── global daily cap ───────────────────────────────────────────────────────────
+# Backstop against sustained abuse across many IPs. In-memory is fine for a
+# single Render instance; resets naturally on every deploy or restart.
+DAILY_CAP = 2000
+MAX_QUESTION_LEN = 500
+_daily: dict = {"date": None, "count": 0}
+
+
+def _check_global_cap() -> None:
+    today = datetime.date.today()
+    if _daily["date"] != today:
+        _daily["date"] = today
+        _daily["count"] = 0
+    _daily["count"] += 1
+    if _daily["count"] > DAILY_CAP:
+        raise HTTPException(
+            503,
+            f"Global daily limit of {DAILY_CAP} requests reached. Try again tomorrow.",
+        )
+
+
+# ── app setup ──────────────────────────────────────────────────────────────────
+app = FastAPI(title="EDGAR Intelligence API")
+app.state.limiter = limiter
+
+
+def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please wait a moment before trying again."},
+        headers={"Retry-After": "60"},
+    )
+
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
 )
 
 
+# ── vector store ───────────────────────────────────────────────────────────────
 def connect():
-    """Connect to the Phase 2 vector store, or return None if it isn't built yet."""
+    """Connect to the Chroma vector store, or return None if it isn't built yet."""
     try:
         return chromadb.PersistentClient(path=CHROMA_DIR).get_collection(COLLECTION)
     except Exception:
@@ -46,6 +100,7 @@ def connect():
 collection = connect()
 
 
+# ── request schema ─────────────────────────────────────────────────────────────
 class Query(BaseModel):
     question: str
     k: int = TOP_K
@@ -55,19 +110,33 @@ class Query(BaseModel):
     history: list = []  # prior turns: [{"question": str, "answer": str}, ...]
 
 
+# ── routes ─────────────────────────────────────────────────────────────────────
 @app.get("/health")
 def health():
-    """Quick check that the server is up and the index is loaded."""
+    """Instant liveness check — does not touch the index so cold /health is fast."""
     if collection is None:
         return {"status": "no index", "chunks": 0}
     return {"status": "ok", "chunks": collection.count()}
 
 
 @app.post("/query")
-def query(q: Query):
+@limiter.limit("10/minute")
+@limiter.limit("200/day")
+def query(request: Request, q: Query):
     """Answer one question from the corpus, with cited sources."""
+    # Fast validation — no LLM cost.
+    if not q.question.strip():
+        raise HTTPException(400, "Question cannot be empty.")
+    if len(q.question) > MAX_QUESTION_LEN:
+        raise HTTPException(
+            400,
+            f"Question too long ({len(q.question)} chars). Please keep it under {MAX_QUESTION_LEN} characters.",
+        )
     if collection is None:
         raise HTTPException(503, "Index not built. Run `python embed_and_search.py` first.")
+
+    # Global daily cap — checked here so only requests that reach the LLM are counted.
+    _check_global_cap()
 
     # Build an optional metadata filter from the request fields.
     where = None
@@ -82,7 +151,9 @@ def query(q: Query):
         where = {"$and": filters}
 
     try:
-        answer, results, effective_where = ask(collection, q.question, where=where, k=q.k, diverse=q.diverse, history=q.history)
+        answer, results, effective_where = ask(
+            collection, q.question, where=where, k=q.k, diverse=q.diverse, history=q.history
+        )
     except Exception as e:
         raise HTTPException(500, f"Failed to answer: {e}")
 
@@ -99,6 +170,8 @@ def query(q: Query):
             "similarity": round(r["similarity"], 3),
             "rerank_score": round(r.get("rerank_score", r["similarity"]), 3),
         })
+
+    # Success shape is frozen — do not change field names or remove fields.
     return {
         "question": q.question,
         "answer": answer,
