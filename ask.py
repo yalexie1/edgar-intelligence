@@ -164,7 +164,7 @@ Answer contract — follow every rule:
 1. Ground every claim in the passages. Do not add facts from outside them.
 2. After each claim, cite the passage number(s) in square brackets, e.g. [1] or [2, 3].
 3. For each cited claim, include: the claim, a short supporting quote (use "..."), the source (ticker, form, period, section), and a confidence level (High / Medium / Low).
-4. If the passages do not contain enough information to answer, say so plainly and abstain rather than guessing.
+4. If the passages do not contain enough information to answer confidently, start your entire response with the exact token INSUFFICIENT_EVIDENCE on its own line, then explain why you cannot answer.
 5. If the passages feel off-topic or similarities are low, flag that the evidence is thin.
 6. Be concise and factual. Prefer exact figures and direct quotes.
 
@@ -217,16 +217,19 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
         results = diversify_results(results, k=k, by="ticker")
 
     if not results:
-        return "The corpus returned no results for this question.", [], where
+        return (
+            "INSUFFICIENT_EVIDENCE\n\nThe corpus returned no results for this question.",
+            [],
+            where,
+        )
 
     # If the best evidence is very weak, abstain rather than risk hallucination.
     best_score = results[0].get("rerank_score", results[0]["similarity"])
     if best_score < LOW_SIMILARITY_THRESHOLD:
         return (
-            f"The retrieved passages have very low relevance scores "
+            f"INSUFFICIENT_EVIDENCE\n\nEvidence is too thin to answer confidently "
             f"(best rerank score: {best_score:.3f}). "
-            "The corpus may not cover this question well. "
-            "No confident answer can be given.",
+            "The corpus may not cover this question.",
             results,
             where,
         )
@@ -239,6 +242,38 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
         messages=[{"role": "user", "content": prompt}],
     )
     return msg.content[0].text, results, where
+
+
+def ask_with_contexts(question, collection, where=None, k=TOP_K, diverse=False, history=None):
+    """Thin wrapper around ask() that returns retrieved contexts alongside the answer.
+
+    Used by evals/eval_ragas.py so RAGAS can judge grounding without duplicating
+    the retrieval pipeline.
+
+    Returns:
+        {
+          "answer":   str,
+          "contexts": [str, ...],   # raw chunk texts, one per retrieved passage
+          "sources":  [dict, ...],  # ticker/form/period/section/url per passage
+        }
+    """
+    answer, results, _ = ask(
+        collection, question, where=where, k=k, diverse=diverse, history=history
+    )
+    return {
+        "answer": answer,
+        "contexts": [r["text"] for r in results],
+        "sources": [
+            {
+                "ticker":     r["metadata"].get("ticker", ""),
+                "form":       r["metadata"].get("form", ""),
+                "period":     r["metadata"].get("period") or r["metadata"].get("filing_date", ""),
+                "section":    r["metadata"].get("section", ""),
+                "source_url": r["metadata"].get("source_url", ""),
+            }
+            for r in results
+        ],
+    }
 
 
 def main():

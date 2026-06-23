@@ -187,3 +187,14 @@ def evals_results():
     if not path.exists():
         raise HTTPException(404, "No eval results found. Run `python evals/eval.py` first.")
     return json.loads(path.read_text())
+
+
+@app.get("/evals/ragas")
+def ragas_results():
+    """Return the last saved RAGAS eval summary for the dashboard."""
+    path = Path("evals/results/ragas_summary.json")
+    if not path.exists():
+        raise HTTPException(
+            404, "No RAGAS results found. Run `python evals/eval_ragas.py` first."
+        )
+    return json.loads(path.read_text())

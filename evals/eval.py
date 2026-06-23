@@ -27,6 +27,7 @@ Run:
 import argparse
 import datetime
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -35,7 +36,14 @@ from pathlib import Path
 
 DATASET = Path(__file__).parent / "dataset.json"
 
-# Strings that signal the model abstained rather than answered.
+# ask.py prepends this token when it decides programmatically to abstain
+# (no results, low similarity score). The prompt also asks the model to emit
+# it when evidence is insufficient. Checking the token is more reliable than
+# sniffing prose keywords.
+ABSTAIN_MARKER = "INSUFFICIENT_EVIDENCE"
+
+# Fallback prose signals for answers that predate the marker or come from the
+# model ignoring the prompt instruction.
 ABSTAIN_SIGNALS = [
     "cannot answer",
     "cannot be answered",
@@ -81,8 +89,28 @@ def call_api(base_url, question):
 
 
 def did_abstain(answer):
+    # Check the explicit marker first — it's unambiguous.
+    if answer.lstrip().startswith(ABSTAIN_MARKER):
+        return True
+    # Fallback prose sniffing for answers without the marker.
     a = answer.lower()
     return any(sig in a for sig in ABSTAIN_SIGNALS)
+
+
+def _strip_num_commas(text):
+    """Remove thousand-separator commas from numbers ('416,161' → '416161')."""
+    return re.sub(r"(\d),(\d)", r"\1\2", text)
+
+
+def needle_in_answer(needle, answer):
+    """Case-insensitive substring match with light numeric normalization.
+
+    Also tries matching after stripping comma separators from the answer so
+    a needle like '416' matches both '416.2B' and '416,161M'.
+    """
+    nl = needle.lower()
+    al = answer.lower()
+    return nl in al or nl in _strip_num_commas(al)
 
 
 def score_case(case, data):
@@ -111,21 +139,24 @@ def score_case(case, data):
 
     # --- answer faithfulness ---
     if answer_needles:
-        answer_hit = all(needle.lower() in answer_lower for needle in answer_needles)
+        answer_hit = all(needle_in_answer(n, answer) for n in answer_needles)
     else:
-        # No specific strings required; pass if retrieval hit (we can only check grounding)
-        answer_hit = True
+        # No specific strings to check — this is a retrieval-only case.
+        # answer_hit=None signals "not scored" so the faithfulness metric
+        # stays honest rather than auto-passing every retrieval-only case.
+        answer_hit = None
 
     # --- abstain check ---
     if should_abstain:
         abstain_correct = did_abstain(answer)
-        # Override the other scores for abstain cases — retrieval is not meaningful
+        # For abstain cases retrieval and faithfulness aren't meaningful.
         retrieval_hit = True
         answer_hit    = abstain_correct
         correct       = abstain_correct
     else:
         abstain_correct = None
-        correct = retrieval_hit and answer_hit
+        # Retrieval-only cases pass on retrieval alone (answer_hit not checked).
+        correct = retrieval_hit if answer_hit is None else (retrieval_hit and answer_hit)
 
     return {
         "correct":         correct,
@@ -219,10 +250,15 @@ def run(base_url, verbose=False, group_filter=None):
     n_total   = len(all_valid)
     n_pass    = sum(r["correct"] for r in all_valid)
     n_ret_hit = sum(r["retrieval_hit"] for r in factual_results)
-    n_ans_hit = sum(r["answer_hit"] for r in factual_results)
     n_f       = len(factual_results)
     n_ab_ok   = sum(1 for r in abstain_results if r.get("abstain_correct") is True)
     n_ab      = len(abstain_results)
+
+    # Faithfulness is only meaningful for cases that have expected answer strings.
+    # Retrieval-only cases (answer_hit=None) are excluded so the metric is honest.
+    scored_cases = [r for r in factual_results if r.get("answer_hit") is not None]
+    n_ans_hit = sum(1 for r in scored_cases if r["answer_hit"])
+    n_scored  = len(scored_cases)
 
     def pct(n, d):
         return f"{100 * n // d}%" if d else "n/a"
@@ -230,7 +266,7 @@ def run(base_url, verbose=False, group_filter=None):
     print(f"\n{'─'*56}")
     print(f"  {BOLD}Overall{RESET}               {n_pass}/{n_total}  {pct(n_pass, n_total)}")
     print(f"  Retrieval hit-rate    {n_ret_hit}/{n_f}  {pct(n_ret_hit, n_f)}")
-    print(f"  Answer faithfulness   {n_ans_hit}/{n_f}  {pct(n_ans_hit, n_f)}")
+    print(f"  Answer faithfulness   {n_ans_hit}/{n_scored}  {pct(n_ans_hit, n_scored)}  {DIM}(cases with expected strings only){RESET}")
     print(f"  Abstain precision     {n_ab_ok}/{n_ab}  {pct(n_ab_ok, n_ab)}")
 
     # Per-group breakdown
@@ -277,7 +313,10 @@ def run(base_url, verbose=False, group_filter=None):
             "passed":               n_pass,
             "pass_rate":            round(n_pass / n_total, 3) if n_total else 0,
             "retrieval_hit_rate":   round(n_ret_hit / n_f, 3) if n_f else 0,
-            "answer_faithfulness":  round(n_ans_hit / n_f, 3) if n_f else 0,
+            # Faithfulness is only computed over cases that have expected strings.
+            # scored_cases excludes retrieval-only cases (answer_hit=None).
+            "answer_faithfulness":  round(n_ans_hit / n_scored, 3) if n_scored else 0,
+            "faithfulness_n":       n_scored,   # denominator for transparency
             "abstain_precision":    round(n_ab_ok / n_ab, 3) if n_ab else 0,
             "by_group": {
                 g: {

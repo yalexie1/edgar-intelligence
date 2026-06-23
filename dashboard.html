@@ -149,7 +149,7 @@ function renderCases(cases) {
       <td><span class="badge badge-type">${c.question_type}</span></td>
       <td class="tick-col">${tick(c.correct)}</td>
       <td class="tick-col">${tick(c.retrieval_hit, isAbstain)}</td>
-      <td class="tick-col">${tick(c.answer_hit, isAbstain)}</td>
+      <td class="tick-col">${tick(c.answer_hit, isAbstain || c.answer_hit === null)}</td>
       <td class="tick-col">${tick(c.abstain_correct, !isAbstain)}</td>
       <td style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">${c.elapsed}s</td>`;
 
@@ -329,6 +329,8 @@ function render(d) {
       </tr></thead><tbody>${typeRows}</tbody></table>
     </div>
 
+    <div id="ragas-section"></div>
+
     <div class="section-head" style="margin-top:36px">All cases</div>
     <div class="filter-row">
       <label>Group</label>
@@ -379,6 +381,63 @@ function sortBy(col) {
 }
 
 load();
+
+async function loadRagas() {
+  const section = document.getElementById("ragas-section");
+  if (!section) return;
+  try {
+    const res = await fetch(`${API}/evals/ragas`);
+    if (!res.ok) {
+      // Not run yet — show a muted placeholder rather than an error.
+      section.innerHTML = `
+        <div class="section-head" style="margin-top:36px">RAGAS metrics <span style="font-weight:400;font-size:10px;color:var(--muted)">(LLM judge · optional)</span></div>
+        <div style="color:var(--muted);font-size:13px;padding:12px 0 28px">
+          Not yet run. Execute <code style="font-family:var(--font-mono);font-size:12px">python evals/eval_ragas.py --subset 10</code> to generate scores.
+        </div>`;
+      return;
+    }
+    const d = await res.json();
+    const m = d.metrics || {};
+    const fmt = v => v != null ? v.toFixed(3) : "—";
+    const runDate = d.run_date ? new Date(d.run_date).toLocaleString() : "unknown";
+    const subset = d.subset ? ` · subset of ${d.n_cases}` : ` · ${d.n_cases} cases`;
+
+    section.innerHTML = `
+      <div class="section-head" style="margin-top:36px">RAGAS metrics <span style="font-weight:400;font-size:10px;color:var(--muted)">(LLM judge · complementary)</span></div>
+      <div style="color:var(--muted);font-family:var(--font-mono);font-size:11px;margin-bottom:14px">
+        Last run: ${runDate}${subset}
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 18px;margin-bottom:8px;font-size:13px;color:var(--muted);line-height:1.6">
+        ${escHtml(d.judge_note || "")}
+      </div>
+      <div class="cards" style="margin-bottom:36px">
+        <div class="card">
+          <div class="card-label">Faithfulness</div>
+          <div class="card-value">${fmt(m.faithfulness)}</div>
+          <div class="card-sub">claims grounded in context</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Answer relevancy</div>
+          <div class="card-value">${fmt(m.answer_relevancy)}</div>
+          <div class="card-sub">answer on-topic for question</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Context precision</div>
+          <div class="card-value">${fmt(m.context_precision)}</div>
+          <div class="card-sub">relevant contexts ranked first</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Context recall</div>
+          <div class="card-value">${fmt(m.context_recall)}</div>
+          <div class="card-sub">contexts cover expected answer</div>
+        </div>
+      </div>`;
+  } catch (e) {
+    // Silently suppress — RAGAS is optional and the network may be unavailable.
+  }
+}
+
+loadRagas();
 </script>
 </body>
 </html>

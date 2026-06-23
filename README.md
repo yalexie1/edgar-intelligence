@@ -116,6 +116,10 @@ The API also exposes:
 
 ## Eval harness
 
+Two complementary evaluation layers are used. The deterministic suite is the primary regression test; RAGAS is a secondary LLM-judge layer.
+
+### Layer 1 — Deterministic suite (primary)
+
 A 100-case golden dataset (`evals/dataset.json`) covers four question types:
 
 | Group | Cases | What it tests |
@@ -130,9 +134,27 @@ Run the full suite (requires the API to be running):
 python evals/eval.py
 ```
 
-Last result: **96/100** — retrieval 95%, answer faithfulness 98%, abstain precision 100%.
+**Answer faithfulness** is scored only on cases with expected strings in `answer_contains` (12 of 74 non-abstain cases). Cases without expected strings are retrieval-only checks and excluded from the faithfulness metric.
 
+Last result: **96/100** — retrieval 95%, abstain precision 100%.  
 Results are saved to `evals/last_results.json` and visible at `dashboard.html`.
+
+### Layer 2 — RAGAS (complementary, optional)
+
+RAGAS computes LLM-as-a-judge metrics: faithfulness, answer relevancy, context precision, and context recall. These complement the deterministic suite but are **not ground truth** — scores vary by judge model and version.
+
+Requires extra dependencies:
+```bash
+pip install "ragas>=0.1.9" datasets pandas
+```
+
+Run a 10-case smoke test first, then the full set:
+```bash
+python evals/eval_ragas.py --subset 10
+python evals/eval_ragas.py
+```
+
+Results are saved to `evals/results/` and shown in the eval dashboard under "RAGAS metrics."
 
 ## Notes
 
