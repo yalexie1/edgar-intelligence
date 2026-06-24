@@ -25,5 +25,7 @@ services:
         sync: false        # set manually in the Render dashboard
       - key: ALLOWED_ORIGINS
         sync: false        # optional; defaults cover the Vercel frontend and localhost
+      - key: ANSWER_MODEL
+        value: claude-sonnet-4-6   # upgrade from Haiku for the deployed demo
       - key: PYTHON_VERSION
         value: 3.11.0
