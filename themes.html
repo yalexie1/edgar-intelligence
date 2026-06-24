@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EDGAR Intelligence — Theme Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+  :root {
+    --bg: #eaeef2;
+    --surface: #ffffff;
+    --ink: #15202b;
+    --muted: #5b6675;
+    --line: #dde2e8;
+    --accent: #0e6b5c;
+    --accent-soft: #e3f0ed;
+    --fail: #b5322a;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 48px 20px 80px; }
+
+  .eyebrow { display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    letter-spacing: .05em; text-transform: uppercase; margin-bottom: 20px; }
+  .eyebrow a { color: var(--muted); text-decoration: none; }
+  .eyebrow a:hover { color: var(--ink); }
+  .nav-links { display: flex; gap: 16px; }
+
+  h1 { font-family: var(--font-display); font-size: 36px; font-weight: 600;
+    letter-spacing: -.02em; margin-bottom: 8px; }
+  .sub { font-size: 15px; color: var(--muted); margin-bottom: 32px; max-width: 680px; }
+
+  /* score explanation callout */
+  .callout { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 28px; }
+  .callout-head { font-weight: 600; font-size: 13px; margin-bottom: 10px; }
+  .callout p { font-size: 13px; color: var(--muted); margin-bottom: 8px; line-height: 1.7; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout code { font-family: var(--font-mono); font-size: 12px; background: var(--bg);
+    padding: 1px 5px; border-radius: 4px; color: var(--ink); }
+  .callout ul { font-size: 13px; color: var(--muted); padding-left: 20px; }
+  .callout ul li { margin-bottom: 4px; line-height: 1.7; }
+  .callout strong { color: var(--ink); font-weight: 500; }
+
+  /* controls */
+  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .controls select, .controls button {
+    font-family: var(--font-body); font-size: 13px; border-radius: 7px;
+    border: 1px solid var(--line); padding: 8px 14px; outline: none; cursor: pointer;
+  }
+  .controls select { color: var(--ink); background: var(--surface); appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235b6675' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px; }
+  .controls select:focus { border-color: var(--accent); }
+  .controls button { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 500; }
+  .controls button:hover { opacity: .88; }
+  .controls button:disabled { opacity: .5; cursor: default; }
+
+  /* heat map table */
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+  .heat-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+  .heat-table th { background: var(--bg); font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 10px 12px;
+    text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .heat-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+  .heat-table tr:last-child td { border-bottom: none; }
+  .theme-name { font-weight: 500; white-space: nowrap; min-width: 150px; }
+  .heat-cell { width: 68px; text-align: center; }
+  .heat-pip { display: inline-block; width: 52px; height: 22px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: 10px; line-height: 22px; color: #fff; text-align: center; }
+  .no-data { color: var(--muted); font-family: var(--font-mono); font-size: 11px; text-align: center; padding: 40px 0; }
+
+  .legend { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 10px; }
+
+  /* theme descriptions */
+  .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px; margin-bottom: 28px; }
+  .theme-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; }
+  .theme-card-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .theme-card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">
+    <span>theme tracker · edgar intelligence</span>
+    <div class="nav-links">
+      <a href="dashboard.html">← eval dashboard</a>
+      <a href="index.html">← app</a>
+    </div>
+  </div>
+
+  <h1>Theme Tracker</h1>
+  <p class="sub">For each of 8 predefined themes, shows which filing periods contain the strongest matching evidence for a given company. Retrieval-only — no LLM call, no interpretation.</p>
+
+  <!-- Score explanation -->
+  <div class="callout">
+    <div class="callout-head">What the score measures — and what it does not</div>
+    <p>Each cell shows the <code>rerank_score</code> of the <strong>single best-matching chunk</strong> from that company's 10-K or 10-Q in that period, against the theme's fixed search query.</p>
+    <p><code>rerank_score = cosine_similarity + 0.08 × lexical_score</code><br>
+    Cosine similarity is the dot product of the chunk's embedding vector and the query's embedding vector — it measures semantic proximity in the model's latent space. The 0.08 × lexical term adds a small boost when query keywords appear literally in the chunk text.</p>
+    <p><strong>What a high score means:</strong> a chunk exists in this period whose embedding is close to the theme query. The theme's vocabulary is present and retrievable.</p>
+    <p><strong>What a high score does not mean:</strong></p>
+    <ul>
+      <li>It is not a count — one highly-matching chunk scores the same as a filing saturated with that topic.</li>
+      <li>It does not capture sentiment — a company disclosing a serious breach and one mentioning routine password policies can score similarly on "cybersecurity."</li>
+      <li>It does not measure prominence — a passing footnote and a dedicated Risk Factors section score on the same scale.</li>
+      <li>Score differences within a row are small. 0.46 → 0.64 looks dramatic as a colour gradient but the absolute embedding distance is modest. Do not read this as a precise ranking between companies.</li>
+    </ul>
+    <p>Use this as an <strong>exploration signal</strong>: "does this topic show up in this period's filings?" — not as a quantitative measure of exposure or emphasis.</p>
+  </div>
+
+  <!-- Theme vocabulary -->
+  <div class="callout" style="margin-bottom:28px">
+    <div class="callout-head">Theme queries (what the retrieval searches for)</div>
+    <div class="theme-grid" id="themeGrid"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <select id="themeTicker">
+      <option value="">Select company…</option>
+      ${["AAPL","AMD","AMZN","AVGO","CRM","GOOGL","INTC","META","MSFT","NFLX","NVDA","ORCL","TSLA"]
+          .map(t => `<option value="${t}">${t}</option>`).join("")}
+    </select>
+    <button id="loadBtn" onclick="loadThemes()">Load themes</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<script>
+const API = window.EDGAR_API_URL;
+
+const THEMES = {
+  ai_ml:             { label: "AI & ML",            query: "artificial intelligence machine learning generative AI large language model compute GPU" },
+  cybersecurity:     { label: "Cybersecurity",       query: "cybersecurity data breach cyber attack security incident vulnerability" },
+  supply_chain:      { label: "Supply Chain",        query: "supply chain supplier component shortage inventory disruption" },
+  regulation:        { label: "Regulation",          query: "regulatory antitrust regulation compliance government oversight" },
+  china_geopolitics: { label: "China & Geopolitics", query: "China geopolitical export control tariff sanction trade restriction" },
+  climate_esg:       { label: "Climate & ESG",       query: "climate change sustainability carbon emission environmental regulation ESG" },
+  competition:       { label: "Competition",         query: "competition competitive market share competitor emerging displacement" },
+  cloud_platform:    { label: "Cloud & Platform",    query: "cloud revenue growth infrastructure platform SaaS subscription services" },
+};
+
+// Populate theme vocabulary cards
+document.getElementById("themeGrid").innerHTML = Object.values(THEMES).map(t =>
+  `<div class="theme-card">
+    <div class="theme-card-name">${t.label}</div>
+    <div class="theme-card-desc">${t.query}</div>
+  </div>`
+).join("");
+
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+async function loadThemes() {
+  const ticker = document.getElementById("themeTicker").value;
+  const btn    = document.getElementById("loadBtn");
+  const out    = document.getElementById("result");
+  if (!ticker) { out.innerHTML = `<div class="no-data">Select a company first.</div>`; return; }
+
+  btn.disabled = true;
+  btn.textContent = "Loading…";
+  out.innerHTML = `<div class="no-data">Fetching theme data for ${ticker}…</div>`;
+
+  try {
+    const res = await fetch(`${API}/themes?ticker=${ticker}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Collect all periods across all themes sorted by filing_date.
+    const periodMeta = {};
+    for (const theme of Object.values(data.themes)) {
+      for (const p of theme.periods) {
+        if (!periodMeta[p.period] || p.filing_date < periodMeta[p.period].filing_date) {
+          periodMeta[p.period] = { filing_date: p.filing_date, form: p.form };
+        }
+      }
+    }
+    const allPeriods = Object.keys(periodMeta).sort(
+      (a, b) => periodMeta[a].filing_date.localeCompare(periodMeta[b].filing_date)
+    );
+
+    if (allPeriods.length === 0) {
+      out.innerHTML = `<div class="no-data">No 10-K/10-Q data found for ${ticker}.</div>`;
+      return;
+    }
+
+    // Score range for colour scaling.
+    let minScore = Infinity, maxScore = -Infinity;
+    for (const theme of Object.values(data.themes)) {
+      for (const p of theme.periods) {
+        if (p.score < minScore) minScore = p.score;
+        if (p.score > maxScore) maxScore = p.score;
+      }
+    }
+    const scoreRange = Math.max(maxScore - minScore, 0.05);
+
+    function heatColour(score) {
+      const t = Math.max(0, Math.min(1, (score - minScore) / scoreRange));
+      const alpha = 0.15 + t * 0.85;
+      return `rgba(14,107,92,${alpha.toFixed(2)})`;
+    }
+
+    const headerCells = allPeriods.map(p =>
+      `<th class="heat-cell">${escHtml(p)}<br>
+        <span style="font-size:9px;color:var(--muted);font-family:var(--font-body);text-transform:none;letter-spacing:0">${periodMeta[p].form}</span>
+      </th>`
+    ).join("");
+
+    const rows = Object.entries(data.themes).map(([key, theme]) => {
+      const byPeriod = Object.fromEntries(theme.periods.map(p => [p.period, p]));
+      const cells = allPeriods.map(period => {
+        const p = byPeriod[period];
+        if (!p) return `<td class="heat-cell"><span style="color:var(--line)">—</span></td>`;
+        const col = heatColour(p.score);
+        const tip = (p.text || "").replace(/"/g, "&quot;").slice(0, 200) + "…";
+        const url = p.source_url || "#";
+        return `<td class="heat-cell">
+          <a href="${escHtml(url)}" target="_blank" title="${tip}" style="text-decoration:none">
+            <span class="heat-pip" style="background:${col}">${p.score.toFixed(2)}</span>
+          </a>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px">${escHtml(p.section || "")}</div>
+        </td>`;
+      }).join("");
+      return `<tr><td class="theme-name">${escHtml(theme.label)}</td>${cells}</tr>`;
+    }).join("");
+
+    out.innerHTML = `
+      <div class="table-wrap">
+        <table class="heat-table">
+          <thead><tr><th>Theme</th>${headerCells}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <p class="legend">
+        Score range: ${minScore.toFixed(2)} – ${maxScore.toFixed(2)} ·
+        scores are <em>relative within this company</em> — colour intensity is scaled to [min, max] for ${ticker}, not across companies ·
+        8-K filings excluded · hover a cell to preview the matching text · click to open the source filing
+      </p>`;
+  } catch (e) {
+    out.innerHTML = `<div class="no-data" style="color:var(--fail)">${escHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Load themes";
+  }
+}
+</script>
+</body>
+</html>
