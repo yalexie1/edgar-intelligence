@@ -11,4 +11,4 @@ slowapi
 # Optional — only needed for evals/eval_ragas.py
 # ragas>=0.1.9
 # datasets>=2.14
-# pandas>=2.0
+# pandas>=2.0pytest

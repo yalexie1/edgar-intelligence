@@ -315,7 +315,7 @@ Question: {question}
 Answer (period-by-period, then trend summary):"""
 
 
-def _ask_cross_company(collection, question, tickers, k, history):
+def _ask_cross_company(collection, question, tickers, k, history, model=None):
     """Structured retrieval: pull evidence per named company, then synthesize.
 
     Returns (answer_text, flat_results_list, None). effective_where is None
@@ -349,14 +349,14 @@ def _ask_cross_company(collection, question, tickers, k, history):
     prompt = build_cross_company_prompt(question, company_results, history=history)
     client = Anthropic()
     msg = client.messages.create(
-        model=ANSWER_MODEL,
+        model=model or ANSWER_MODEL,
         max_tokens=1400,
         messages=[{"role": "user", "content": prompt}],
     )
     return msg.content[0].text, flat, None
 
 
-def _ask_temporal(collection, question, ticker, k, history):
+def _ask_temporal(collection, question, ticker, k, history, model=None):
     """Structured temporal retrieval: group evidence by period, sort chronologically.
 
     Retrieves a large candidate pool for the ticker, then picks the top result
@@ -404,14 +404,14 @@ def _ask_temporal(collection, question, ticker, k, history):
     prompt = build_temporal_prompt(question, selected, ticker, history=history)
     client = Anthropic()
     msg = client.messages.create(
-        model=ANSWER_MODEL,
+        model=model or ANSWER_MODEL,
         max_tokens=1200,
         messages=[{"role": "user", "content": prompt}],
     )
     return msg.content[0].text, selected, where
 
 
-def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
+def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None):
     """Retrieve evidence and produce a grounded, cited answer.
 
     Returns (answer_text, results_list, effective_where). Each result dict has:
@@ -440,11 +440,11 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
 
         # P2: structured per-company retrieval for explicit multi-company questions.
         if len(tickers) > 1 and not diverse:
-            return _ask_cross_company(collection, question, tickers, k, history)
+            return _ask_cross_company(collection, question, tickers, k, history, model=model)
 
         # P2: structured temporal retrieval for single-company trend questions.
         if len(tickers) == 1 and is_temporal_question(question) and not diverse:
-            return _ask_temporal(collection, question, tickers[0], k, history)
+            return _ask_temporal(collection, question, tickers[0], k, history, model=model)
 
         if len(tickers) == 1:
             where = {"ticker": tickers[0]}
@@ -487,7 +487,7 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
     prompt = build_prompt(question, results, history=history)
     client = Anthropic()  # reads ANTHROPIC_API_KEY from the environment
     msg = client.messages.create(
-        model=ANSWER_MODEL,
+        model=model or ANSWER_MODEL,
         max_tokens=900,
         messages=[{"role": "user", "content": prompt}],
     )

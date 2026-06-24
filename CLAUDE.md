@@ -17,7 +17,7 @@ Update this file after any major change to the codebase.
 
 ## Current status (read this first)
 
-v2 is in progress. P0, P1, and all P2 tasks are done. **Next: P3 or theme tracking.**
+v2 is complete. P0, P1, P2, and P3 are all done.
 
 - Scale: 13 companies, ~8,141 chunks, 10-K / 10-Q / 8-K over ~2 years.
 - Frontend: basic single-page chat UI with waking-up state and auto-retry on cold start.
@@ -140,12 +140,13 @@ clears it on "New question."
 - Backend: `uvicorn api:app --reload --port 8000`
 - Frontend: `python -m http.server 5500` then open `http://localhost:5500/dashboard.html`
   (use localhost:5500, not file://, so CORS to the API works)
+- Unit tests (no API needed): `python -m pytest tests/`
 - Evals (API must be running): `python evals/eval.py` (or `--group factual`)
 - RAGAS eval (optional, API must be running): `python evals/eval_ragas.py --subset 10`
   NOTE: blocked on Python 3.14 + nest_asyncio incompatibility; run on Python 3.11/3.12.
 - Rebuild index (only if corpus changed): `python embed_and_search.py --rebuild`
 - Interactive search: `python embed_and_search.py [--ticker AAPL --section mda | --diverse]`
-- Normal run prints: `Index already built (5438 vectors). Skipping embedding.`
+- Normal run prints: `Index already built (8141 vectors). Skipping embedding.`
 
 ## Tech stack and key decisions
 
@@ -255,15 +256,18 @@ Acceptance:
 - ✓ 4 new eval cases pass (2 cross-company, 2 temporal). Evals: 103/104 (99%).
 - Section fix and theme tracking still pending (see above).
 
-## P3 — Engineering hygiene
+## P3 — Engineering hygiene ✓ DONE
 
-Tasks:
-- Unit tests (pytest) for pure functions: `build_where`, `diversify_results`,
-  `canonical_section`, chunking, `detect_tickers`. No network or paid calls.
-- Make `ANSWER_MODEL` per-request configurable; use `claude-sonnet-4-6` for the deployed
-  demo (cost is low at demo volume), Haiku as the dev default.
-- Cache identical `(question, where, diverse)` results to cut repeat cost/latency.
-- Keep this `CLAUDE.md` updated as state changes.
+- **Unit tests** (`tests/test_pure.py`): 51 cases, 51/51 passing. Covers
+  `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`,
+  `chunk_section`. No network or paid API calls. Run: `python -m pytest tests/`.
+- **Per-request model config** (`ask.py` + `api.py`): `ask()` and both structured
+  retrieval helpers accept a `model=None` kwarg (falls back to `ANSWER_MODEL` constant).
+  `api.py` reads `ANSWER_MODEL` env var (default: Haiku). Set `ANSWER_MODEL=claude-sonnet-4-6`
+  on Render for sharper deployed answers.
+- **Caching** (`api.py`): in-memory LRU cache (max 256 entries, `OrderedDict`) keyed on
+  `(question, where, diverse)`. Skips cache when `history` is present (context-dependent).
+  Resets on restart — acceptable for a demo server.
 
 ## Deploy hardening (fixes the cold-start pain)
 

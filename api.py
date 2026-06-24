@@ -10,6 +10,7 @@ Endpoints:
 import datetime
 import json
 import os
+from collections import OrderedDict
 from pathlib import Path
 
 import chromadb
@@ -22,10 +23,41 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from ask import ask, track_themes
+from ask import ask, track_themes, ANSWER_MODEL as _DEFAULT_MODEL
 from embed_and_search import CHROMA_DIR, COLLECTION, TOP_K
 
 load_dotenv()
+
+# ANSWER_MODEL env var lets each deployment choose its model without a code change.
+# Set to "claude-sonnet-4-6" on Render; leave unset for Haiku (dev default).
+ANSWER_MODEL = os.getenv("ANSWER_MODEL", _DEFAULT_MODEL)
+
+# ── result cache ───────────────────────────────────────────────────────────────
+# Caches identical (question, where, diverse) tuples to avoid redundant LLM calls.
+# In-memory only — resets on restart, which is fine for a demo server. Max 256
+# entries; oldest evicted first (insertion-order OrderedDict).
+_CACHE: OrderedDict = OrderedDict()
+_CACHE_MAX = 256
+
+
+def _cache_key(question: str, where, diverse: bool) -> str:
+    return json.dumps({"q": question, "w": where, "d": diverse}, sort_keys=True)
+
+
+def _cache_get(key: str):
+    if key in _CACHE:
+        _CACHE.move_to_end(key)  # mark as recently used
+        return _CACHE[key]
+    return None
+
+
+def _cache_set(key: str, value) -> None:
+    if key in _CACHE:
+        _CACHE.move_to_end(key)
+    _CACHE[key] = value
+    if len(_CACHE) > _CACHE_MAX:
+        _CACHE.popitem(last=False)  # evict oldest
+
 
 # ── rate limiting (per-IP) ─────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address)
@@ -156,9 +188,19 @@ def query(request: Request, q: Query):
         where = {"$and": filters}
 
     try:
-        answer, results, effective_where = ask(
-            collection, q.question, where=where, k=q.k, diverse=q.diverse, history=q.history
-        )
+        # Only cache when there's no conversation history — history makes each
+        # request contextually unique and caching it would return stale context.
+        cache_key = _cache_key(q.question, where, q.diverse) if not q.history else None
+        cached = _cache_get(cache_key) if cache_key else None
+        if cached:
+            answer, results, effective_where = cached
+        else:
+            answer, results, effective_where = ask(
+                collection, q.question, where=where, k=q.k, diverse=q.diverse,
+                history=q.history, model=ANSWER_MODEL,
+            )
+            if cache_key:
+                _cache_set(cache_key, (answer, results, effective_where))
     except Exception as e:
         raise HTTPException(500, f"Failed to answer: {e}")
 
