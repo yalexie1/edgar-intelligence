@@ -129,6 +129,15 @@ def download_filing_html(cik, accession, primary_document):
 
 # --- Cleaning, sections, chunking -------------------------------------------
 
+# Short-but-critical: SEC Part and Item headings like "Item 1A. Risk Factors" are
+# often 15–35 chars, well below MIN_PARAGRAPH_CHARS=40, so they would be silently
+# dropped — making ITEM_RE and PART_RE blind to those sections. We keep any block
+# that starts with "Item <digit>" or "Part <roman>" regardless of length.
+_SEC_HEADING_RE = re.compile(
+    r"^(?:item\s+\d|part\s+[ivx])", re.IGNORECASE
+)
+
+
 def html_to_text(html):
     """Strip noise while preserving paragraph-like breaks for better chunking."""
     soup = BeautifulSoup(html, "html.parser")
@@ -151,7 +160,10 @@ def html_to_text(html):
 
         txt = tag.get_text(" ", strip=True)
         txt = re.sub(r"\s+", " ", txt).strip()
-        if len(txt) < MIN_PARAGRAPH_CHARS:
+        # Always keep SEC Part/Item headings even when short. Without this,
+        # "Item 1A. Risk Factors" (21 chars) gets dropped and the section
+        # boundary is invisible to split_into_item_sections.
+        if len(txt) < MIN_PARAGRAPH_CHARS and not _SEC_HEADING_RE.match(txt):
             continue
         # SEC HTML often repeats the same text through nested div/table tags.
         # Dedup exact repeats so the vector index is not polluted.

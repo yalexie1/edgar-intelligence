@@ -1,5 +1,5 @@
 {
-  "run_date": "2026-06-24T12:01:28.997187",
+  "run_date": "2026-06-24T12:46:43.926056",
   "summary": {
     "total": 104,
     "passed": 103,
@@ -57,8 +57,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 2.72,
-      "answer_excerpt": "**Claim:** Apple's total net sales in fiscal year 2025 were $416,161 million (approximately $416.2 billion).  **Supporting quote:** \"Total net sales $ 416,161 6 % $ 391,035 2 % $ 383,285\"  **Source:** AAPL, 10-K, FY2025, \u00a7mda (Management's Discussion and Analysis)  **Confidence:** High  This figure "
+      "elapsed": 8.74,
+      "answer_excerpt": "**Claim:** Apple's total net sales in fiscal year 2025 were $416,161 million (or approximately $416.2 billion).  **Supporting Quote:** \"Total net sales $ 416,161 6 % $ 391,035 2 % $ 383,285\" (where 2025 is the first column)  **Source:** AAPL | 10-K | FY2025 | \u00a7mda (Passage [2])  **Confidence Level:*"
     },
     {
       "id": "nvda_datacenter_q2fy25",
@@ -75,8 +75,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 4.29,
-      "answer_excerpt": "**Claim 1: Data Center Revenue in Q2 FY2025**  Data Center revenue for the second quarter of fiscal year 2025 was $26.3 billion. [2, 4]  **Supporting quote:** \"Data Center revenue for the second quarter of fiscal year 2025 was $26.3 billion...\" [2]  **Source:** NVDA | 10-Q | 2024-07 | \u00a7mda  **Confid"
+      "elapsed": 6.01,
+      "answer_excerpt": "**Claim 1: Data Center revenue in Q2 FY2025**  Data Center revenue for the second quarter of fiscal year 2025 was $26.3 billion [2, 4].  - **Quote:** \"Data Center revenue for the second quarter of fiscal year 2025 was $26.3 billion...\" - **Source:** NVDA, 10-Q, 2024-07, \u00a7mda - **Confidence:** High  "
     },
     {
       "id": "msft_cloud_growth",
@@ -93,8 +93,8 @@
       "filter_applied": {
         "ticker": "MSFT"
       },
-      "elapsed": 3.42,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain Microsoft's most recent quarterly filing (10-Q for the quarter ended March 31, 2025, passage [2]), but this passage does not include an explicit statement of overall revenue growth percentage for that quarter.  Passage [2] provides highlights for "
+      "elapsed": 6.22,
+      "answer_excerpt": "Based on the most recent quarterly filing (Q3 FY2025, ended March 31, 2025):  **Microsoft's overall revenue growth in Q3 FY2025 was approximately 16% year-over-year.**  However, the passages provided do not contain an explicit overall revenue growth percentage figure for Q3 FY2025. The available dat"
     },
     {
       "id": "googl_cloud_growth",
@@ -111,8 +111,8 @@
       "filter_applied": {
         "ticker": "GOOGL"
       },
-      "elapsed": 2.32,
-      "answer_excerpt": "**Claim: Google Cloud revenue grew 34% year over year in Google's most recent quarterly filing (Q3 2025).**  - **Quote:** \"an increase in Google Cloud revenues of $3.8 billion, or 34%\" - **Source:** GOOGL | 10-Q | 2025-09 | \u00a7mda - **Passage:** [1] - **Confidence:** High  This represents the growth f"
+      "elapsed": 7.61,
+      "answer_excerpt": "**Claim:** Google Cloud revenue grew 34% year over year in the most recent quarterly filing.  **Supporting quote:** \"...an increase in Google Cloud revenues of $3.8 billion, or 34%.\"  **Source:** GOOGL | 10-Q | 2025-09 (Q3 2025) | Management's Discussion and Analysis  **Confidence:** High  **Citatio"
     },
     {
       "id": "avgo_gross_margin",
@@ -129,8 +129,8 @@
       "filter_applied": {
         "ticker": "AVGO"
       },
-      "elapsed": 2.8,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only company business descriptions, fiscal year information, restructuring charges, and dividend announcements from Broadcom's SEC filings. None of the passages include gross margin percentages or detailed financial statements showing revenue and "
+      "elapsed": 5.49,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only boilerplate company descriptions, fiscal year information, and general statements about forward-looking statements and restructuring charges. None of the passages include financial statements or specific gross margin data for any quarterly pe"
     },
     {
       "id": "aapl_revenue_yoy",
@@ -147,8 +147,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 4.53,
-      "answer_excerpt": "**Claim: Apple's total net sales increased by $25.126 billion from fiscal year 2024 to fiscal year 2025, representing 6% growth.** [1, 3]  - **Quote:** \"Total net sales $ 416,161 6 % $ 391,035 2 % $ 383,285\" (FY2025: $416,161M; FY2024: $391,035M) - **Source:** AAPL | 10-K | FY2025 | \u00a7mda (passage [1"
+      "elapsed": 6.07,
+      "answer_excerpt": "**Claim 1: Apple's total net sales increased from FY2024 to FY2025**  Apple's total net sales increased 6% year-over-year, from $391,035 million in fiscal 2024 to $416,161 million in fiscal 2025. [1, 3]  **Supporting Evidence:**  - **Quote:** \"Total net sales $ 416,161 6 % $ 391,035\" [1, 3] - **Sour"
     },
     {
       "id": "nflx_strategy",
@@ -165,8 +165,8 @@
       "filter_applied": {
         "ticker": "NFLX"
       },
-      "elapsed": 3.28,
-      "answer_excerpt": "Netflix's stated strategy for growing its business is: **\"to grow our business globally within the parameters of our operating margin target.\"** [1, 2, 3, 4, 5]  **Supporting Details:**  1. **Core Strategy Foundation** [1]    - Quote: \"Our core strategy is to grow our business globally within the pa"
+      "elapsed": 6.53,
+      "answer_excerpt": "# Netflix's Stated Business Growth Strategy  **Core Strategy Foundation:** Netflix's core strategy is to \"grow our business globally within the parameters of our operating margin target.\" [1, 2, 3, 4, 5]  **Key Strategic Pillars:**  1. **Content Excellence and Member Experience**    Netflix strives "
     },
     {
       "id": "tsla_competition",
@@ -183,8 +183,8 @@
       "filter_applied": {
         "ticker": "TSLA"
       },
-      "elapsed": 4.06,
-      "answer_excerpt": "Based on the passages, Tesla describes the competitive landscape in the EV market as follows:  **Increasing Competition**  Tesla states that \"as additional competitors enter the marketplace and help bring the world closer to sustainable transportation, we will have to adjust and continue to execute "
+      "elapsed": 8.09,
+      "answer_excerpt": "# Tesla's Description of the EV Market Competitive Landscape  **1. Market is highly competitive and intensifying** Tesla states: \"The worldwide automotive market is highly competitive and we expect it will become even more competitive in the future as a significant and growing number of established "
     },
     {
       "id": "amd_ai_risks",
@@ -201,8 +201,8 @@
       "filter_applied": {
         "ticker": "AMD"
       },
-      "elapsed": 4.99,
-      "answer_excerpt": "Based on AMD's SEC filings, the company discloses the following AI-related risks:  **1. Regulatory and Compliance Risk** AMD faces \"competitive harm, regulatory action and legal liability as a result of new and proposed legislation regulating AI, as well as new applications of existing data protecti"
+      "elapsed": 6.64,
+      "answer_excerpt": "# AMD's Disclosed AI-Related Risks  **1. Responsible Use and Public Acceptance Risk**  AMD discloses that \"Issues related to the responsible use of AI may result in reputational, competitive and financial harm and liability.\" [1, 2, 3, 4, 5]  - **Quote:** \"Issues related to the responsible use of AI"
     },
     {
       "id": "intc_challenges",
@@ -219,8 +219,8 @@
       "filter_applied": {
         "ticker": "INTC"
       },
-      "elapsed": 4.23,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about Intel's business challenges. The documents consist of:  - **[1]**: An 8-K announcing Q1 2026 financial results, with only a brief statement that non-GAAP measures are included in a press release (the actual press release c"
+      "elapsed": 5.78,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain descriptions of Intel's business challenges. The filings excerpt only cover:  - [1] A procedural notice about Q1 2026 earnings results and non-GAAP measures - [2] Voting results from the annual stockholder meeting (May 2026) - [3] An announ"
     },
     {
       "id": "aapl_iphone_revenue_fy2025",
@@ -237,8 +237,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 2.86,
-      "answer_excerpt": "**iPhone revenue in fiscal year 2025 was $209.586 billion.** [1]  **Claim Details:** - **Claim:** Apple's iPhone net sales for FY2025 totaled $209,586 million ($209.586 billion). - **Supporting Quote:** \"iPhone $ 209,586 4 % $ 201,183\" - **Source:** AAPL, 10-K, FY2025, \u00a7financial_statements (MD&A ta"
+      "elapsed": 5.46,
+      "answer_excerpt": "**Claim:** Apple's iPhone revenue in fiscal year 2025 was $209,586 million ($209.6 billion).  **Supporting quote:** \"iPhone $ 209,586 4 % $ 201,183 \u2014 % $ 200,583\"  **Source:** AAPL | 10-K | FY2025 | \u00a7mda (Management's Discussion and Analysis)  **Confidence:** High  **Additional context:** The passag"
     },
     {
       "id": "aapl_americas_revenue",
@@ -255,8 +255,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 2.35,
-      "answer_excerpt": "**Claim:** Apple's Americas segment net sales in fiscal year 2025 were $178,353 million. [2, 3]  **Supporting Quote:** \"Americas $ 178,353 7 % $ 167,045 3 % $ 162,560\"  **Source:** AAPL | 10-K | FY2025 | \u00a7mda  **Confidence:** High  **Additional Context:** The passages note that \"Americas net sales i"
+      "elapsed": 3.26,
+      "answer_excerpt": "**Claim 1: Apple's Americas segment net sales in fiscal year 2025 were $178,353 million.**  - **Quote:** \"Americas $ 178,353 7 % $ 167,045\" - **Source:** AAPL, 10-K, FY2025, \u00a7mda - **Passage:** [2, 3] - **Confidence:** High  **Supporting context:** The Americas segment increased 7% year-over-year co"
     },
     {
       "id": "avgo_tsmc_concentration",
@@ -273,8 +273,8 @@
       "filter_applied": {
         "ticker": "AVGO"
       },
-      "elapsed": 3.66,
-      "answer_excerpt": "**Claim 1: TSMC manufactured approximately 95% of Broadcom's wafers during the fiscal quarter ended February 2, 2025.**  Supporting quote: \"Taiwan Semiconductor Manufacturing Company Limited (\"TSMC\"), one of our CMs, manufactured approximately 95% of the wafers manufactured by our CMs during the fis"
+      "elapsed": 2.89,
+      "answer_excerpt": "**Claim 1: TSMC manufactured approximately 95% of Broadcom's wafers during fiscal year 2025**  Supporting quote: \"During fiscal year 2025, approximately 95% of the wafers manufactured by our CMs were produced by TSMC.\"  Source: AVGO | 10-K | FY2025 | \u00a7risk_factors  Confidence: High  [5]  ---  **Clai"
     },
     {
       "id": "googl_total_revenue_q3cy25",
@@ -291,8 +291,8 @@
       "filter_applied": {
         "ticker": "GOOGL"
       },
-      "elapsed": 2.53,
-      "answer_excerpt": "**Claim:** Google's total revenue in Q3 2025 (three months ended September 30, 2025) was $102.3 billion, representing a 16% year-over-year increase. [2]  **Supporting quote:** \"Revenues were $102.3 billion, an increase of 16% year over year, primarily driven by an increase in Google Services revenue"
+      "elapsed": 3.28,
+      "answer_excerpt": "Based on the passages provided, I can answer this question:  **Google's total revenue in the third quarter of calendar year 2025 was $102.3 billion.** [4]  **Supporting details:**  - **Claim:** Q3 2025 total revenues were $102.3 billion, representing 16% year-over-year growth. - **Quote:** \"Revenues"
     },
     {
       "id": "nvda_datacenter_fy2025_fullyear",
@@ -309,8 +309,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 2.36,
-      "answer_excerpt": "[2] NVIDIA's Data Center computing revenue grew **162%** in full-year fiscal year 2025.  **Supporting quote:** \"Revenue from Data Center computing grew 162% driven primarily by demand for our Hopper computing platform used for large language models, recommendation engines, and generative AI applicat"
+      "elapsed": 3.18,
+      "answer_excerpt": "[2]  **Claim:** NVIDIA's Data Center computing revenue grew 162% in full-year fiscal year 2025.  **Supporting quote:** \"Revenue from Data Center computing grew 162% driven primarily by demand for our Hopper computing platform used for large language models, recommendation engines, and generative AI "
     },
     {
       "id": "msft_ai_risk_disclosure",
@@ -326,8 +326,8 @@
         "MSFT"
       ],
       "filter_applied": null,
-      "elapsed": 9.52,
-      "answer_excerpt": "## MICROSOFT (MSFT) \u2014 AI-Related Risk Disclosures  **Key Point:** Microsoft discloses extensive and evolving AI risks spanning development flaws, regulatory challenges, ethical concerns, and liability exposure across multiple product categories.  **Supporting Evidence:**  Microsoft identifies severa"
+      "elapsed": 9.01,
+      "answer_excerpt": "## MICROSOFT (MSFT)  **Key Point:** Microsoft discloses extensive AI-related risks across multiple filings, focusing on development flaws, deployment challenges, regulatory exposure, and reputational harm.  **Supporting Evidence:**  Microsoft identifies several categories of AI risk:  1. **Algorithm"
     },
     {
       "id": "meta_ai_investment",
@@ -344,8 +344,8 @@
       "filter_applied": {
         "ticker": "META"
       },
-      "elapsed": 4.81,
-      "answer_excerpt": "**Claim 1: Meta expects increased infrastructure investment for AI initiatives**  \"In particular, we expect our AI initiatives will require increased investment in infrastructure and headcount.\" [2, 3]  - **Source:** META | 10-Q | 2025-09 and 2025-06 - **Confidence:** High - **Note:** This language "
+      "elapsed": 3.39,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain specific capital expenditure figures or detailed quantitative plans for AI infrastructure spending.   While the filings state that Meta \"expect[s] our AI initiatives will require increased investment in infrastructure and headcount\" [2, 3, 5] and th"
     },
     {
       "id": "amzn_aws_description",
@@ -362,8 +362,8 @@
       "filter_applied": {
         "ticker": "AMZN"
       },
-      "elapsed": 5.14,
-      "answer_excerpt": "# Amazon's Description of the AWS Business and Its Role  **AWS as a Separate Cost Classification Structure**  Amazon describes AWS as operating under a distinct cost structure integrated with shared infrastructure. \"Costs to operate our AWS segment are primarily classified as 'Technology and infrast"
+      "elapsed": 5.11,
+      "answer_excerpt": "# Amazon's Description of AWS Business and Role  **Core Business Definition:** Amazon describes AWS as serving \"developers and enterprises of all sizes, including start-ups, government agencies, and academic institutions\" through \"a broad set of on-demand technology services, including compute, stor"
     },
     {
       "id": "tsla_energy_business",
@@ -380,8 +380,8 @@
       "filter_applied": {
         "ticker": "TSLA"
       },
-      "elapsed": 4.65,
-      "answer_excerpt": "# Tesla's Energy Generation and Storage Business Segment  **Segment Definition and Products**  Tesla's energy generation and storage segment \"includes the design, manufacture, installation, sales and leasing of energy generation and storage products and related services and sales of energy generatio"
+      "elapsed": 5.5,
+      "answer_excerpt": "# Tesla's Energy Generation and Storage Business Segment  **Business Description and Products:**  Tesla's energy generation and storage segment \"includes the design, manufacture, installation, sales and leasing of solar energy generation and energy storage products and related services and sales of "
     },
     {
       "id": "orcl_cloud_strategy",
@@ -398,8 +398,8 @@
       "filter_applied": {
         "ticker": "ORCL"
       },
-      "elapsed": 3.84,
-      "answer_excerpt": "# Oracle's Cloud Infrastructure and Applications Strategy  **1. Core Strategic Objective: Customer Choice and Flexibility**  Oracle states that \"providing choice and flexibility to our customers as to when and how they deploy Oracle applications and infrastructure technologies are important elements"
+      "elapsed": 8.38,
+      "answer_excerpt": "# Oracle's Cloud Infrastructure and Applications Strategy  **1. Integrated Comprehensive Offerings**  Oracle describes its cloud strategy as centered on providing \"comprehensive and integrated applications and infrastructure services, enabling our customers to choose the best option that meets their"
     },
     {
       "id": "crm_revenue_segments",
@@ -416,8 +416,8 @@
       "filter_applied": {
         "ticker": "CRM"
       },
-      "elapsed": 3.78,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain a breakdown of Salesforce's primary revenue categories. While the filings describe the company's business segments and service offerings\u2014such as sales, service, marketing, commerce, and IT teams connected through the Customer 360 platform, "
+      "elapsed": 3.45,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about Salesforce's primary revenue categories or how revenue is broken down by product, service, or business segment.  While the passages describe Salesforce's business operations generally\u2014including mentions of \"sales, service,"
     },
     {
       "id": "nflx_ad_tier",
@@ -434,8 +434,8 @@
       "filter_applied": {
         "ticker": "NFLX"
       },
-      "elapsed": 3.96,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain specific information about Netflix's advertising-supported subscription tier beyond a single mention of its existence.  The only reference to advertising is a general strategic statement: Netflix \"aim[s] to offer a range of pricing plans, including "
+      "elapsed": 3.77,
+      "answer_excerpt": "Based on the passages provided, Netflix makes the following statements about its advertising-supported subscription tier:  **1. Offering ad-supported plans as part of pricing strategy**  Netflix states: \"We aim to offer a range of pricing plans, including our ad-supported subscription plan, to meet "
     },
     {
       "id": "amd_data_center_revenue",
@@ -452,8 +452,8 @@
       "filter_applied": {
         "ticker": "AMD"
       },
-      "elapsed": 4.77,
-      "answer_excerpt": "# AMD Data Center Segment Performance  ## FY2025 Performance (Full Year)  **Revenue Growth:** AMD's Data Center segment achieved \"net revenue of $16.6 billion in 2025 increased by 32%, compared to net revenue of $12.6 billion in 2024\" [1]. The increase was \"primarily driven by strong demand for our "
+      "elapsed": 5.29,
+      "answer_excerpt": "# AMD Data Center Segment Performance  **Revenue Growth:** AMD's Data Center segment achieved net revenue of $16.6 billion in FY2025, representing a 32% increase compared to $12.6 billion in FY2024. [1] The increase was \"primarily driven by strong demand for our AMD EPYC\u2122 processors and AMD Instinct"
     },
     {
       "id": "intc_foundry_strategy",
@@ -470,8 +470,8 @@
       "filter_applied": {
         "ticker": "INTC"
       },
-      "elapsed": 3.3,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about Intel's foundry services business.   The passages consist of: - [1] A results of operations announcement for Q1 2026 (no operational details included) - [2] A leadership transition announcement (Board Chair retirement) - ["
+      "elapsed": 3.59,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain any information about Intel's foundry services business.   Passage [1] discusses Q1 2026 financial results and non-GAAP measures. Passage [2] covers the Apollo joint venture repurchase related to Fab 34 in Ireland. Passage [3] details a $6."
     },
     {
       "id": "avgo_ai_networking",
@@ -488,8 +488,8 @@
       "filter_applied": {
         "ticker": "AVGO"
       },
-      "elapsed": 3.56,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only general business descriptions of Broadcom's overall product portfolio and do not include specific information about how Broadcom describes its \"AI networking and custom accelerator business\" as a distinct business unit or segment.  While the "
+      "elapsed": 5.85,
+      "answer_excerpt": "# Broadcom's AI Networking and Custom Accelerator Business  **AI Networking Solutions**  Broadcom describes its AI networking capabilities as enabling \"accelerated compute and networking connectivity at scale, within and across AI server racks and across AI data center sites.\" [1] The company provid"
     },
     {
       "id": "msft_azure_description",
@@ -506,8 +506,8 @@
       "filter_applied": {
         "ticker": "MSFT"
       },
-      "elapsed": 3.32,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain a descriptive characterization of the Azure cloud platform itself. While the filings repeatedly reference \"Azure and other cloud services revenue\" with growth metrics across multiple quarters [1, 2, 3, 4, 5], they do not describe Azure's fe"
+      "elapsed": 3.25,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain a descriptive characterization of the Azure cloud platform itself. While the passages reference Azure multiple times, they only report revenue figures and growth rates for \"Azure and other cloud services\" (e.g., \"Azure and other cloud servi"
     },
     {
       "id": "meta_vr_hardware_risk",
@@ -524,8 +524,8 @@
       "filter_applied": {
         "ticker": "META"
       },
-      "elapsed": 4.93,
-      "answer_excerpt": "# Meta's Disclosed Risks Related to VR and Hardware Products  **1. Limited Experience and Competitive Disadvantage**  Meta acknowledges having \"relatively limited experience with consumer hardware products and virtual, augmented, and mixed reality technology, which may enable other companies to comp"
+      "elapsed": 4.65,
+      "answer_excerpt": "# Meta's Disclosed Risks Related to VR and Hardware Products  **1. Limited Experience in Consumer Hardware and VR/AR Technology**  Meta has \"relatively limited experience with consumer hardware products and virtual and augmented reality technology, which may enable other companies to compete more ef"
     },
     {
       "id": "googl_regulatory_risk",
@@ -542,8 +542,8 @@
       "filter_applied": {
         "ticker": "GOOGL"
       },
-      "elapsed": 8.28,
-      "answer_excerpt": "# Google's Disclosed Regulatory and Antitrust Risks  ## European Antitrust Matters  **Shopping Decision** Google has disclosed a \u20ac2.4 billion fine from the European Commission (June 2017) for actions related to \"display and ranking of shopping search results and ads\" that \"infringed European antitru"
+      "elapsed": 7.51,
+      "answer_excerpt": "# Google's Disclosed Regulatory and Antitrust Risks  ## Competition/Antitrust Litigation  **1. European Commission Shopping Decision** Google is subject to a \u20ac2.4 billion fine regarding shopping search results. \"In June 2017, the EC announced its decision that certain actions taken by Google relatin"
     },
     {
       "id": "amzn_tariff_risk",
@@ -560,8 +560,8 @@
       "filter_applied": {
         "ticker": "AMZN"
       },
-      "elapsed": 4.89,
-      "answer_excerpt": "# Amazon's Description of Tariff and Trade Policy Risk  **Claim 1: Tariffs and trade policies are identified as direct operational risks.**  \"laws and policies of the U.S. and other jurisdictions affecting trade (such as tariff policy changes), foreign investment, loans, and taxes\" [1, 2, 3, 4]  - *"
+      "elapsed": 6.02,
+      "answer_excerpt": "# Amazon's Description of Tariff and Trade Policy Risk  **Claim 1: Tariffs and trade policies are listed as direct regulatory threats.**  Amazon identifies \"laws and policies of the U.S. and other jurisdictions affecting trade (such as tariff policy changes)\" as a key risk factor affecting internati"
     },
     {
       "id": "tsla_autonomous_driving",
@@ -578,8 +578,8 @@
       "filter_applied": {
         "ticker": "TSLA"
       },
-      "elapsed": 8.97,
-      "answer_excerpt": "# Tesla's Autonomous Driving Technology and Associated Risks  ## Technology Description  Tesla describes its autonomous driving technology as central to its business strategy and future growth. The company states it is \"focused on bringing artificial intelligence (\"AI\") into the real world, through "
+      "elapsed": 11.42,
+      "answer_excerpt": "# Tesla's Autonomous Driving Technology and Associated Risks  ## Technology Description  **FSD (Supervised) and Current Capabilities** Tesla describes its autonomous driving technology as follows: \"Every Tesla vehicle delivered today is designed for autonomy\" and the company offers \"advanced driver "
     },
     {
       "id": "orcl_database_competition",
@@ -596,8 +596,8 @@
       "filter_applied": {
         "ticker": "ORCL"
       },
-      "elapsed": 4.06,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain any description of competition in the database and cloud markets. The passages focus exclusively on Oracle's revenue recognition policies, business segment structure, product offerings, and deployment models. While they describe Oracle Clou"
+      "elapsed": 5.04,
+      "answer_excerpt": "# Oracle's Description of Competition in Database and Cloud Markets  **1. Intense Competition Across All Business Aspects**  Oracle faces \"intense competition in all aspects of our business\" as \"the nature of the IT industry creates a competitive landscape that is constantly evolving as firms emerge"
     },
     {
       "id": "crm_agentforce",
@@ -614,8 +614,8 @@
       "filter_applied": {
         "ticker": "CRM"
       },
-      "elapsed": 3.97,
-      "answer_excerpt": "# Salesforce's Agentforce AI Platform  **1. Introduction and Core Functionality**  Salesforce introduced Agentforce as \"a new layer of our trusted platform that enables companies to build and deploy AI agents that can respond to inputs, make decisions and take action autonomously across business fun"
+      "elapsed": 5.84,
+      "answer_excerpt": "# Salesforce Agentforce AI Platform: Key Claims from Recent Filings  **1. Core Definition and Purpose**  Claim: Agentforce is an agentic layer of the Agentforce 360 Platform that enables customers to build and deploy autonomous AI agents across business functions.  Quote: \"With Agentforce, the agent"
     },
     {
       "id": "nvda_supply_chain_risk",
@@ -632,8 +632,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 8.85,
-      "answer_excerpt": "# NVIDIA Supply Chain Risks in Semiconductor Manufacturing  **1. Long Manufacturing Lead Times and Extended Supply Delays**  Claim: NVIDIA has experienced and may continue to experience extended lead times exceeding 12 months for certain supplies.  Supporting quote: \"We have previously experienced a"
+      "elapsed": 6.74,
+      "answer_excerpt": "# NVIDIA's Disclosed Supply Chain Risks in Semiconductor Manufacturing  **1. Long manufacturing lead times and extended supply delays**  NVIDIA has experienced and \"may continue to experience extended lead times of more than 12 months\" [1, 4, 5]. The company discloses that \"In periods of shortages i"
     },
     {
       "id": "aapl_services_revenue",
@@ -650,8 +650,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 4.62,
-      "answer_excerpt": "Based on the passages provided, here is what Apple discloses about its Services segment and growth drivers:  **Services Revenue Growth Drivers:**  Apple states that \"Services net sales increased during 2024 compared to 2023 due primarily to higher net sales from advertising, the App Store\u00ae and cloud"
+      "elapsed": 14.15,
+      "answer_excerpt": "Based on the passages provided, here is how Apple describes its Services segment and what drives its growth:  ## Description of Services  Apple's Services segment encompasses a broad range of offerings: [1] \"The Company's advertising services include third-party licensing arrangements and the Compan"
     },
     {
       "id": "nflx_content_spending",
@@ -668,8 +668,8 @@
       "filter_applied": {
         "ticker": "NFLX"
       },
-      "elapsed": 5.15,
-      "answer_excerpt": "# Netflix Content Spending and Programming Obligations  Based on the passages provided, Netflix makes limited specific disclosures about content spending levels. However, the company does address programming obligations as follows:  ## Programming Obligations  **Netflix acknowledges unknown future c"
+      "elapsed": 10.4,
+      "answer_excerpt": "# Netflix Content Spending and Programming Obligations  Based on the provided passages, Netflix makes limited explicit statements about content spending and programming obligations:  ## Forward-Looking Statement Recognition  Netflix acknowledges content obligations as a source of uncertainty in its "
     },
     {
       "id": "amd_mi300_ramp",
@@ -686,8 +686,8 @@
       "filter_applied": {
         "ticker": "AMD"
       },
-      "elapsed": 4.92,
-      "answer_excerpt": "The passages provided do not contain a specific description of how AMD characterizes the \"ramp\" of its MI300 AI accelerator products in terms of production volume, timeline, or growth trajectory.  What the passages do state:  **MI300X Deployment (FY2024):** \"The demand for our Data Center AI acceler"
+      "elapsed": 8.45,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain a description of how AMD characterizes or describes the \"ramp\" of its MI300 AI accelerator products.   While the passages mention MI300 products multiple times\u2014including references to \"AMD Instinct MI200, MI300, MI325 and MI350 series\" [1] "
     },
     {
       "id": "meta_dau_description",
@@ -704,8 +704,8 @@
       "filter_applied": {
         "ticker": "META"
       },
-      "elapsed": 7.37,
-      "answer_excerpt": "# Meta's Daily Active People (DAP) Metric  **Definition and Scope**  Meta defines Daily Active People (DAP) as \"a registered and logged-in user of Facebook, Instagram, Messenger, and/or WhatsApp (collectively, our 'Family' of products) who visited at least one of these Family products through a mobi"
+      "elapsed": 9.08,
+      "answer_excerpt": "**Claim 1: Definition of Daily Active People (DAP)**  Meta defines DAP as part of its \"Family metrics\" based on user activity across its product ecosystem. The company states: \"We report our estimates of the numbers of our daily active people (DAP)...based on the activity of users who visited at lea"
     },
     {
       "id": "amzn_advertising_segment",
@@ -722,8 +722,8 @@
       "filter_applied": {
         "ticker": "AMZN"
       },
-      "elapsed": 3.97,
-      "answer_excerpt": "# Amazon's Advertising Services Business Description  **Core Service Offering** Amazon provides advertising services to multiple customer types: \"sellers, vendors, publishers, authors, and others, through programs such as sponsored ads, display, and video advertising.\" [1, 2, 5] - **Quote:** \"We pro"
+      "elapsed": 10.06,
+      "answer_excerpt": "# Amazon's Advertising Services Business  **Core Service Offering:** Amazon provides advertising services to \"sellers, vendors, publishers, authors, and others, through programs such as sponsored ads, display, and video advertising.\" [2, 3, 5] The service is offered across multiple segments and cust"
     },
     {
       "id": "msft_copilot_description",
@@ -740,8 +740,8 @@
       "filter_applied": {
         "ticker": "MSFT"
       },
-      "elapsed": 3.27,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain specific descriptions of Microsoft's Copilot AI products. While the passages discuss Microsoft's general AI strategy\u2014including that \"we are building AI into many of our offerings, including our productivity services\" [1, 2, 3, 4, 5] and tha"
+      "elapsed": 12.8,
+      "answer_excerpt": "# Microsoft's Copilot AI Products in SEC Filings  ## Core Copilot Offerings  Microsoft describes Copilot as a central component of its AI strategy. The company positions it as part of a broader \"Copilot stack\" that orchestrates AI transformation: \"Microsoft's AI offerings, including Copilot and our "
     },
     {
       "id": "orcl_remaining_performance",
@@ -758,8 +758,8 @@
       "filter_applied": {
         "ticker": "ORCL"
       },
-      "elapsed": 4.39,
-      "answer_excerpt": "# Oracle's Remaining Performance Obligations  **Total RPO Amount and Recognition Timeline**  As of May 31, 2025, Oracle's remaining performance obligations totaled $137.8 billion. [2, 5] The company expects to recognize these obligations as follows: \"approximately 33% as revenues over the next twelv"
+      "elapsed": 3.73,
+      "answer_excerpt": "# Oracle's Remaining Performance Obligations  **Total RPO Amount and Recognition Timeline:** Oracle reports that as of May 31, 2025, its remaining performance obligations were $137.8 billion, with expected revenue recognition distributed across future periods: approximately 33% over the next twelve "
     },
     {
       "id": "tsla_gigafactory_description",
@@ -776,8 +776,8 @@
       "filter_applied": {
         "ticker": "TSLA"
       },
-      "elapsed": 4.76,
-      "answer_excerpt": "# Tesla's Gigafactory Manufacturing Strategy  **1. Focus on Capacity Growth and Optimization**  Tesla describes its Gigafactory strategy as centered on \"growing and optimizing our manufacturing capacity, which includes capacity for manufacturing newer vehicle models and future vehicles utilizing asp"
+      "elapsed": 6.09,
+      "answer_excerpt": "Tesla describes its Gigafactory manufacturing strategy across several key dimensions:  **Capacity Optimization and Localization** Tesla is \"focused on maximum capacity utilization at our factories, while taking action to localize our vehicle designs and production for particular markets, including c"
     },
     {
       "id": "avgo_vmware_integration",
@@ -794,8 +794,8 @@
       "filter_applied": {
         "ticker": "AVGO"
       },
-      "elapsed": 4.26,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain sufficient information to describe how Broadcom integrated VMware following its acquisition. The passages provide details about the acquisition itself\u2014the completion date (November 22, 2023), transaction structure ($30.788 billion cash and 544 milli"
+      "elapsed": 5.89,
+      "answer_excerpt": "Based on the passages provided, here is how Broadcom describes the integration of VMware following its acquisition:  **Primary Integration Objective:** Broadcom states that \"With the VMware Merger, we have bolstered our infrastructure software solutions and are able to offer our customers a greater "
     },
     {
       "id": "crm_international_revenue",
@@ -812,8 +812,8 @@
       "filter_applied": {
         "ticker": "CRM"
       },
-      "elapsed": 4.18,
-      "answer_excerpt": "# International Revenue Mix \u2013 Salesforce Reporting  **Claim 1: Geographic Revenue Determination Method**  Salesforce states that \"Revenues by geography are determined based on the region of the Salesforce contracting entity, which may be different than the region of the customer.\" [4]  - **Quote:** "
+      "elapsed": 3.57,
+      "answer_excerpt": "Based on the passages provided, Salesforce does not report specific figures or percentages for its international revenue mix.  The only reference to international operations is geographic asset distribution, not revenue:  **Claim:** As of January 31, 2025, assets located outside the Americas represe"
     },
     {
       "id": "intc_restructuring",
@@ -830,8 +830,8 @@
       "filter_applied": {
         "ticker": "INTC"
       },
-      "elapsed": 4.07,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about restructuring actions announced by Intel.   The available passages cover: - [1] Q1 2026 financial results announcement (methods and non-GAAP measures only) - [2] 2026 annual stockholder meeting voting results - [3] Board c"
+      "elapsed": 3.9,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about restructuring actions announced by Intel. The 8-K filings included cover:  - Q1 2026 financial results announcement [1] - Annual stockholder meeting voting results [2] - Board chair retirement and succession [3] - Debt iss"
     },
     {
       "id": "nvda_datacenter_trend",
@@ -848,8 +848,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 8.64,
-      "answer_excerpt": "# NVIDIA Data Center Revenue Growth: Period-by-Period Analysis  **2024-07 (Q2 FY2025):** Data Center revenue was $26.3 billion, \"up 16% from the previous quarter and up 154% from a year ago.\" [1] Data Center compute revenue reached $22.6 billion, \"up 162% from a year ago and up 17% sequentially,\" wh"
+      "elapsed": 7.18,
+      "answer_excerpt": "# NVIDIA Data Center Revenue Growth: Period-by-Period Analysis  ## 2024-07 (Q2 FY2025) Data Center revenue was $26.3 billion, \"up 16% from the previous quarter and up 154% from a year ago.\" [1] This growth was \"driven by demand for our Hopper GPU computing platform for training and inferencing of la"
     },
     {
       "id": "aapl_china_trend",
@@ -866,8 +866,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 5.28,
-      "answer_excerpt": "# Greater China Revenue Trend: Fiscal Year 2024 to 2025  ## Period-by-Period Analysis  **Q3 FY2024 (ended June 29, 2024):** Greater China net sales were $14,728 million. [1]  **Nine-month period FY2024 (ended June 29, 2024):** Greater China net sales were $51,919 million. [1]  **Q1 FY2025 (ended Dec"
+      "elapsed": 7.3,
+      "answer_excerpt": "## Apple Greater China Revenue Trend: FY 2024\u20132025  ### Period-by-Period Analysis  **Q3 FY 2024 (ended June 29, 2024)** Greater China net sales were $14,728 million, down 7% year-over-year from $15,758 million in Q3 FY 2023, \"due primarily to lower net sales of iPhone.\" [1]  **Nine months FY 2024 (e"
     },
     {
       "id": "msft_revenue_multi_quarter",
@@ -884,8 +884,8 @@
       "filter_applied": {
         "ticker": "MSFT"
       },
-      "elapsed": 4.64,
-      "answer_excerpt": "## Period-by-Period Revenue Growth  **Q1 FY2026 (Three Months Ended September 30, 2025)** Revenue increased $12.1 billion or **18%** \"with growth across each of our segments. Intelligent Cloud revenue increased driven by Azure. Productivity and Business Processes revenue increased driven by Microsof"
+      "elapsed": 5.15,
+      "answer_excerpt": "# Microsoft Revenue Growth Analysis  ## Period-by-Period Breakdown  **Q2 FY2026 (Three Months Ended December 31, 2025):** Revenue increased $7.6 billion or 12% driven by growth in Intelligent Cloud and Productivity and Business Processes, with More Personal Computing revenue relatively unchanged. [2"
     },
     {
       "id": "meta_capex_trend",
@@ -902,8 +902,8 @@
       "filter_applied": {
         "ticker": "META"
       },
-      "elapsed": 5.66,
-      "answer_excerpt": "# Meta's Capital Expenditure Trends  ## Period-by-Period Breakdown  **2024-06 (Six months ended June 30, 2024):** Capital expenditures totaled $14.57 billion in net purchases of property and equipment. Meta anticipated making capital expenditures of \"approximately $37 billion to $40 billion in 2024\""
+      "elapsed": 4.83,
+      "answer_excerpt": "# META Capital Expenditure Trend Analysis  ## Period-by-Period Breakdown  **Q2 2024 (June 30, 2024):** Property and equipment in accounts payable and accrued expenses totaled $3,229 million. [1]  **Q3 2024 (September 30, 2024):** Property and equipment in accounts payable and accrued expenses increa"
     },
     {
       "id": "googl_cloud_multi_quarter",
@@ -920,8 +920,8 @@
       "filter_applied": {
         "ticker": "GOOGL"
       },
-      "elapsed": 5.77,
-      "answer_excerpt": "# Google Cloud Revenue Growth Trend  **Period-by-Period Breakdown:**  **2024-06 (Q2 2024):** Google Cloud revenues increased $2.3 billion, or 29% year-over-year. [1]  **2024-09 (Q3 2024):** Google Cloud revenues increased $2.9 billion and $7.4 billion from the three and nine months ended September 3"
+      "elapsed": 5.6,
+      "answer_excerpt": "# Google Cloud Revenue Growth Trend  ## Period-by-Period Analysis  **Q2 2024 (ended June 30, 2024):** Google Cloud revenues increased $2.3 billion, or 29%, year over year. [1]  **Q3 2024 (ended September 30, 2024):** Google Cloud revenues increased $2.9 billion, or approximately 28%, for the three-m"
     },
     {
       "id": "nflx_revenue_trend",
@@ -938,8 +938,8 @@
       "filter_applied": {
         "ticker": "NFLX"
       },
-      "elapsed": 4.66,
-      "answer_excerpt": "# Netflix Quarterly Revenue Growth Analysis  ## Period-by-Period Breakdown  **Q2 2024 (ended June 30, 2024):** Total revenues of $9,559,310 thousand, representing a 17% increase year-over-year compared to Q2 2023 ($8,187,301 thousand). [1]  **Q3 2024 (ended September 30, 2024):** Total revenues of $"
+      "elapsed": 5.31,
+      "answer_excerpt": "# Netflix Quarterly Revenue Growth Analysis  ## Period-by-Period Breakdown (Chronological):  **Q2 2024 (ended June 30, 2024):** Total revenues were $9,559,310 thousand, representing a $1,372,009 thousand increase (17%) compared to Q2 2023. [1]  **Q3 2024 (ended September 30, 2024):** Total revenues "
     },
     {
       "id": "amd_revenue_trend",
@@ -956,7 +956,7 @@
       "filter_applied": {
         "ticker": "AMD"
       },
-      "elapsed": 7.03,
+      "elapsed": 7.49,
       "answer_excerpt": "# AMD Revenue Trend Analysis  ## Period-by-Period Breakdown  **Q2 2024 (ended June 29, 2024):** Net revenue was $5.8 billion, a 9% increase compared to the prior year period. \"The increase in net revenue was driven by an increase in Data Center segment revenue primarily driven by the steep ramp of A"
     },
     {
@@ -974,8 +974,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 12.31,
-      "answer_excerpt": "# NVIDIA Gross Margin Analysis  ## Period-by-Period Breakdown:  **Q2 FY2025 (ended July 28, 2024):** The filing does not provide a gross margin percentage for this period. [1]  **Q3 FY2025 (ended October 27, 2024):** No gross margin data is disclosed in the available passages. [2]  **Q1 FY2026 (ende"
+      "elapsed": 5.2,
+      "answer_excerpt": "# NVIDIA Gross Margin Trend Analysis  ## Period-by-Period Breakdown  **Q2 FY2025 (July 28, 2024)** Evidence is sparse. The passage shows operating expenses as a percentage of revenue but does not directly state gross margin percentage. [1]  **Q3 FY2025 (October 27, 2024)** No gross margin data provi"
     },
     {
       "id": "aapl_services_growth_trend",
@@ -992,8 +992,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 5.46,
-      "answer_excerpt": "# Apple Services Revenue Growth: Period-by-Period Analysis  **Q3 FY2024 (ended June 29, 2024):** The filing does not provide a standalone Services revenue figure for this period. [1]  **Q1 FY2025 (ended December 28, 2024):** Services net sales increased year-over-year \"due primarily to higher net sa"
+      "elapsed": 5.96,
+      "answer_excerpt": "# Apple Services Revenue Growth: Period-by-Period Analysis  **Q3 2024 (ended June 29, 2024):** The filing does not provide a specific Services revenue figure for this quarter. [1]  **Q1 2025 (ended December 28, 2024):** Services net sales increased year-over-year \"due primarily to higher net sales f"
     },
     {
       "id": "crm_revenue_trend",
@@ -1010,8 +1010,8 @@
       "filter_applied": {
         "ticker": "CRM"
       },
-      "elapsed": 12.51,
-      "answer_excerpt": "# Salesforce Revenue Growth Analysis  ## Period-by-Period Breakdown  **2024-07 (Q2 FY2025):** Evidence is insufficient. The passage contains MD&A boilerplate and company description but no specific revenue figures or growth rates. [1]  **2024-10 (Q3 FY2025):** Evidence is insufficient. The passage c"
+      "elapsed": 5.21,
+      "answer_excerpt": "# Salesforce Revenue Growth Trend Analysis  ## Period-by-Period Breakdown  **2024-07 (Q2 FY2025):** No specific revenue growth rate is provided in the passage. The filing contains forward-looking statements and platform descriptions but does not disclose quantitative revenue or growth metrics. [1]  "
     },
     {
       "id": "china_risk_companies",
@@ -1025,13 +1025,13 @@
       "unique_tickers": [
         "AAPL",
         "AMD",
+        "AMZN",
         "AVGO",
-        "NVDA",
-        "TSLA"
+        "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 6.03,
-      "answer_excerpt": "# Companies Mentioning China as a Significant Business Risk  [1] **Apple (AAPL)** mentions China as a significant business risk. \"A significant majority of the Company's manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Ko"
+      "elapsed": 7.56,
+      "answer_excerpt": "# Companies Mentioning China as a Significant Business Risk  **1. AAPL (Apple)** - **Claim:** Apple has significant manufacturing in China and faces material risks from trade restrictions affecting China operations. - **Quote:** \"A significant majority of the Company's manufacturing is performed in "
     },
     {
       "id": "nvda_vs_amd_ai_risks",
@@ -1047,8 +1047,8 @@
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 9.85,
-      "answer_excerpt": "## AMD  **Key Point:** AMD identifies AI regulatory and reputational risks as centered on responsible use concerns, with emphasis on third-party misuse, unintended consequences, and potential regulatory restrictions on AI-related products.  **Supporting Quote:** \"Issues related to the responsible us"
+      "elapsed": 10.13,
+      "answer_excerpt": "## AMD  **Key Point:** AMD faces risks related to responsible AI use, regulatory restrictions on AI products, and potential compliance costs, with concerns centered on misuse, liability, and public acceptance of AI technologies.  **Supporting Quote:** \"If the AI-related products that we offer have u"
     },
     {
       "id": "cross_company_hardware_supply",
@@ -1067,8 +1067,8 @@
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 5.79,
-      "answer_excerpt": "Based on the passages provided, **META** and **AVGO** disclose the most explicit concentration risk in their hardware supply chains.  ---  **META - Hardware Supply Chain Concentration** [2]  Claim: META's consumer hardware manufacturing depends on a small number of third-party manufacturers concentr"
+      "elapsed": 4.04,
+      "answer_excerpt": "# Answer: Hardware Supply Chain Concentration Risk Disclosure  Based on the passages provided, the companies disclosing the most concentration risk in their hardware supply chains are:  ## 1. Apple (AAPL) \u2014 Highest Concentration Risk Disclosure  **Claim: Apple relies on single-source outsourcing par"
     },
     {
       "id": "msft_googl_ai_capex",
@@ -1084,8 +1084,8 @@
         "MSFT"
       ],
       "filter_applied": null,
-      "elapsed": 8.38,
-      "answer_excerpt": "## GOOGL (Alphabet Inc.)  **Key Point:** Google expects significant increases in capital expenditures for AI infrastructure, with 2026 investment planned to \"significantly increase, relative to 2025\" to support AI compute demands.  **Supporting Quote:** \"We invested heavily in capital expenditures i"
+      "elapsed": 8.85,
+      "answer_excerpt": "## GOOGL (Alphabet Inc.)  **Key Point:** Google explicitly commits to significantly increased capital expenditure on AI infrastructure in 2026 relative to 2025, with substantial ongoing investment in servers, network equipment, and data centers.  **Supporting Quote:** \"We invested heavily in capital"
     },
     {
       "id": "cross_company_cybersecurity_risk",
@@ -1097,15 +1097,15 @@
       "answer_hit": null,
       "abstain_correct": null,
       "unique_tickers": [
-        "AAPL",
-        "AVGO",
         "CRM",
         "META",
-        "MSFT"
+        "MSFT",
+        "NVDA",
+        "TSLA"
       ],
       "filter_applied": null,
-      "elapsed": 7.0,
-      "answer_excerpt": "# Answer: Which companies describe cybersecurity breaches or data privacy incidents as material risks?  Based on the passages provided, here are the companies that explicitly describe cybersecurity breaches or data privacy incidents as material risks:  ---  ## 1. **Salesforce (CRM)**  **Claim:** CRM"
+      "elapsed": 7.26,
+      "answer_excerpt": "# Companies Describing Cybersecurity Breaches/Data Privacy as Material Risks  **1. Tesla (TSLA)** - **Claim:** Tesla identifies cybersecurity threats including \"intellectual property theft, fraud, extortion, harm to employees or customers and violation of data privacy or security laws\" as material r"
     },
     {
       "id": "cross_company_ai_regulation",
@@ -1119,13 +1119,13 @@
       "unique_tickers": [
         "AMD",
         "CRM",
+        "GOOGL",
         "META",
-        "MSFT",
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 6.22,
-      "answer_excerpt": "# Companies Discussing EU AI Act or AI-Specific Regulations as Business Risk  **1. META** [1] - **Claim:** META discusses the EU AI Act as an evolving regulatory framework affecting its AI business. - **Quote:** \"...various governmental and regulatory agencies in jurisdictions around the world, whic"
+      "elapsed": 5.91,
+      "answer_excerpt": "# Companies Discussing EU AI Act or AI-Specific Regulations as Business Risk  **1. Google (GOOGL)** - **Claim**: Google discusses the EU AI Act as a specific regulatory risk, stating it came into force on August 1, 2024, and introduces requirements for AI systems. - **Quote**: \"the EU AI Act came in"
     },
     {
       "id": "cross_company_talent_risk",
@@ -1140,12 +1140,12 @@
         "AMD",
         "AVGO",
         "CRM",
-        "META",
-        "MSFT"
+        "MSFT",
+        "TSLA"
       ],
       "filter_applied": null,
-      "elapsed": 5.44,
-      "answer_excerpt": "# Companies Identifying Competition for Engineering Talent as a Significant Risk Factor  **1. Broadcom (AVGO)** [1] - **Claim:** AVGO identifies competition for engineering and technical personnel as a significant business risk. - **Quote:** \"Competition for these employees is significant in many ar"
+      "elapsed": 6.87,
+      "answer_excerpt": "Based on the passages provided, the following companies identify competition for engineering talent as a significant risk factor:  **1. Broadcom (AVGO)** [1] - Claim: AVGO identifies competition for engineering talent, particularly in AI and cybersecurity, as a material risk to business strategy exe"
     },
     {
       "id": "cross_company_climate_risk",
@@ -1160,12 +1160,12 @@
         "AAPL",
         "AMD",
         "CRM",
-        "META",
-        "MSFT"
+        "NVDA",
+        "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 10.57,
-      "answer_excerpt": "# Companies Discussing Climate Change or Environmental Regulation as Business Risk  **1. Salesforce (CRM)** [1] - **Claim:** CRM discusses climate-related risks to business operations and data centers. - **Quote:** \"Any of our primary locations may be vulnerable to the adverse effects of climate cha"
+      "elapsed": 8.58,
+      "answer_excerpt": "Based on the passages provided, the following companies discuss climate change or environmental regulation as a business risk:  ---  **1. Salesforce (CRM)** - **Claim:** CRM identifies climate-related events and environmental risks as business risks, including impacts on operations, supply chain, an"
     },
     {
       "id": "nvda_vs_intc_strategy",
@@ -1181,8 +1181,8 @@
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 6.89,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  **Explanation:**  The passages provide very limited information about Intel's AI chip strategy, making a meaningful comparison impossible.  **INTEL:**  Intel's passages contain no substantive description of AI chip strategy. The available filings discuss corporate governance m"
+      "elapsed": 8.61,
+      "answer_excerpt": "## INTC (INTEL CORP)  **Key Point:** Intel's filings provide no substantive description of AI chip strategy.  The passages for Intel consist entirely of transactional and governance disclosures: a Q1 2026 earnings announcement notice [1], the repurchase of Apollo's stake in Fab 34 in Ireland [2], a "
     },
     {
       "id": "cross_company_legal_proceedings",
@@ -1196,13 +1196,13 @@
       "unique_tickers": [
         "AAPL",
         "AVGO",
-        "CRM",
         "GOOGL",
-        "META"
+        "META",
+        "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 8.16,
-      "answer_excerpt": "Based on the passages provided, the following companies report significant ongoing legal proceedings or litigation:  **1. AVGO (Broadcom)** - **Claim:** AVGO is involved in multiple types of litigation including IP infringement claims, commercial disputes, and employment issues. [1] - **Quote:** \"Fr"
+      "elapsed": 8.64,
+      "answer_excerpt": "# Companies Reporting Significant Ongoing Legal Proceedings or Litigation  **GOOGL (Google)** Claim: Google faces significant antitrust litigation with multiple government agencies and private parties. Quote: \"in December 2020, several State Attorneys General, led by the Texas Attorney General, file"
     },
     {
       "id": "cross_company_rd_spending",
@@ -1221,8 +1221,8 @@
         "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 4.66,
-      "answer_excerpt": "# Research and Development Spending Increases  Based on the passages provided, the largest R&D spending increases are:  ## 1. META \u2014 Largest Absolute Increase **Claim:** META increased research and development expenses by $5.55 billion in Q1 FY2026.  **Supporting Quote:** \"Research and development e"
+      "elapsed": 4.73,
+      "answer_excerpt": "# Research and Development Spending Increases  Based on the passages provided, here are the largest described R&D spending increases:  **META shows the largest percentage increase:** META's R&D expenses increased $5.55 billion, or 46%, in Q1 2026 compared to Q1 2025. The increase was \"primarily due "
     },
     {
       "id": "msft_amzn_cloud_compare",
@@ -1238,8 +1238,8 @@
         "MSFT"
       ],
       "filter_applied": null,
-      "elapsed": 8.17,
-      "answer_excerpt": "## AMAZON (AMZN)  **Key Point:** Amazon describes AWS cloud business growth primarily in terms of increased customer usage and pricing dynamics.  **Supporting Quote:** \"AWS sales increased 19% in 2024, compared to the prior year. The sales growth primarily reflects increased customer usage, partiall"
+      "elapsed": 7.25,
+      "answer_excerpt": "# Cloud Business Growth Comparison  ## AMAZON (AWS)  **Key Point:** Amazon describes AWS as serving \"developers and enterprises of all sizes\" with \"a broad set of on-demand technology services,\" but provides no quantitative growth metrics in the passages provided.  **Supporting Quote:** \"We serve de"
     },
     {
       "id": "cross_company_tariff_risk",
@@ -1258,8 +1258,8 @@
         "TSLA"
       ],
       "filter_applied": null,
-      "elapsed": 6.23,
-      "answer_excerpt": "# Companies Describing Tariffs or Trade Restrictions as Material Business Risk  **1. Apple (AAPL)** **Claim:** Apple identifies tariffs and trade restrictions as materially adverse to its business. **Quote:** \"Restrictions on international trade, such as tariffs and other controls on imports or expo"
+      "elapsed": 6.31,
+      "answer_excerpt": "# Companies Describing Tariffs or Trade Restrictions as Material Business Risk  **1. Apple (AAPL)** [1] - **Claim**: Apple identifies restrictions on international trade as creating material adverse effects on its business and supply chain. - **Quote**: \"Restrictions on international trade, such as "
     },
     {
       "id": "meta_vs_googl_advertising",
@@ -1275,8 +1275,8 @@
         "META"
       ],
       "filter_applied": null,
-      "elapsed": 10.53,
-      "answer_excerpt": "## GOOGL (Alphabet Inc.)  **Key Point:** Google faces multifaceted regulatory and operational challenges in digital advertising, with significant legal liability from antitrust enforcement and evolving compliance requirements that could materially alter business practices.  **Supporting Evidence:** "
+      "elapsed": 11.06,
+      "answer_excerpt": "## GOOGL (Alphabet Inc.)  **Key Point:** Google faces formidable competition across multiple dimensions of its business, with specific exposure to antitrust risks that pose material threats to its advertising operations and business model.  **Supporting Evidence:** Google states it faces \"formidable"
     },
     {
       "id": "cross_company_geopolitical_risk",
@@ -1288,15 +1288,15 @@
       "answer_hit": null,
       "abstain_correct": null,
       "unique_tickers": [
-        "AMD",
+        "AAPL",
         "AVGO",
         "CRM",
         "MSFT",
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 7.99,
-      "answer_excerpt": "# Companies Identifying Geopolitical Instability or Export Controls as Significant Risks  **1. Microsoft (MSFT)** identifies geopolitical risks broadly. - **Claim:** MSFT identifies geopolitical tension and trade restrictions as material risks to operations. - **Quote:** \"geopolitical tension, parti"
+      "elapsed": 7.97,
+      "answer_excerpt": "# Companies Identifying Geopolitical Instability or Export Controls as Significant Risks  Based on the passages, the following companies explicitly identify these risks:  ## Microsoft (MSFT) **Claim:** MSFT identifies geopolitical tension and trade restrictions as operational and economic risks affe"
     },
     {
       "id": "nvda_vs_amd_gross_margin",
@@ -1312,8 +1312,8 @@
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 5.79,
-      "answer_excerpt": "# Gross Margin Comparison: AMD vs. NVIDIA  ## AMD  **Key Point:** AMD's gross margins have ranged from 40% to 52% across recent reporting periods, with significant variation driven by product mix and inventory charges.  **Supporting Evidence:** - Q1 2025 (ended March 29, 2025): 50% gross margin [1] "
+      "elapsed": 5.9,
+      "answer_excerpt": "## NVIDIA  **Key Point:** NVIDIA does not disclose gross margin percentages in the provided passages.  **Supporting Evidence:** The passages provided contain income statement tables and segment revenue/operating income data, but do not explicitly state gross margin as a percentage of revenue. [6, 7,"
     },
     {
       "id": "cross_company_operating_margin",
@@ -1332,8 +1332,8 @@
         "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 5.35,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain sufficient comparable operating income margin data across the corpus companies to answer this question confidently.  **Why:**  1. **Limited coverage**: Only four companies appear in the passages (NFLX, ORCL, CRM, GOOGL, AAPL), leaving 8 cor"
+      "elapsed": 4.76,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  I cannot answer this question confidently because:  1. **Incomplete data across companies**: The passages contain operating income and revenue figures for only 4 of the 13 companies (AAPL, GOOGL, ORCL, NFLX, CRM), and the data is presented in different formats and time periods"
     },
     {
       "id": "orcl_vs_crm_cloud",
@@ -1349,8 +1349,8 @@
         "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 10.16,
-      "answer_excerpt": "## SALESFORCE (CRM)  **Key Point:** Salesforce describes cloud subscription revenue as multi-tenant software access with ratable revenue recognition over the contract term, coupled with relatively consistent customer attrition.  **Supporting Quote:** \"Our Cloud Services allow customers to use our mu"
+      "elapsed": 8.95,
+      "answer_excerpt": "# SALESFORCE (CRM)  **Key Point:** Salesforce describes cloud subscription revenue as multi-tenant software access with ratable revenue recognition over the contract term, with substantially noncancellable arrangements containing no refund provisions.  **Supporting Quote:** \"Cloud Services allow cus"
     },
     {
       "id": "cross_company_ai_product_strategy",
@@ -1365,12 +1365,12 @@
         "AMD",
         "CRM",
         "META",
-        "MSFT",
-        "NVDA"
+        "NVDA",
+        "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 5.51,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain sufficient information to identify which companies describe a specific AI product or platform as a **key growth driver** with confidence.  **Why:**  While the passages reference AI investments and AI-related business growth, they focus primarily on "
+      "elapsed": 4.89,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  **Why:** While the passages describe AI investments and initiatives across multiple companies (META, ORCL, AMD, NVDA, CRM), they do not identify specific AI products or platforms as **key growth drivers** with sufficient clarity.  **Detailed explanation:**  - **CRM [1]** menti"
     },
     {
       "id": "abstain_capital_gains_tax",
@@ -1382,13 +1382,13 @@
       "answer_hit": true,
       "abstain_correct": true,
       "unique_tickers": [
+        "AMZN",
         "AVGO",
-        "META",
-        "MSFT"
+        "META"
       ],
       "filter_applied": null,
-      "elapsed": 2.38,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain information about META's and MSFT's corporate income tax provisions, effective tax rates, research and development capitalization requirements, and global minimum tax regimes. They do not address individual investor capital gains tax rates.   To a"
+      "elapsed": 2.5,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about the current US capital gains tax rate for individual investors. The passages discuss corporate income taxes, effective tax rates for the companies (AMZN, META, AVGO), and various corporate tax provisions such as the GILTI "
     },
     {
       "id": "abstain_stock_price",
@@ -1405,8 +1405,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 4.03,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain Apple's current stock price.   The passages include historical stock price data (such as repurchase prices from specific quarters in FY2024 and FY2025, ranging from approximately $210\u2013$238 per share) and five-year cumulative total shareholder return"
+      "elapsed": 2.7,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  I cannot answer this question from the provided passages. The SEC filings contain historical stock price data and repurchase prices from specific past dates, but do not provide current real-time stock prices.   The passages include: - Historical price-to-repurchase data from S"
     },
     {
       "id": "abstain_samsung",
@@ -1419,11 +1419,12 @@
       "abstain_correct": true,
       "unique_tickers": [
         "AMD",
-        "AVGO"
+        "AVGO",
+        "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 2.73,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain SEC filings from AVGO (Broadcom) and AMD only. Samsung is not among the 13 companies covered in this dataset (AAPL, MSFT, GOOGL, AMZN, META, NVDA, AVGO, TSLA, ORCL, CRM, AMD, NFLX, INTC), and no passages discuss Samsung's semiconductor manufacturi"
+      "elapsed": 3.79,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain information about NVDA (Nvidia), AVGO (Broadcom), and AMD, but they do not include any SEC filings or disclosures from Samsung Electronics Co., Ltd. itself.  While Samsung is mentioned in passages [1], [2], and [3] as a supplier to NVDA\u2014specifical"
     },
     {
       "id": "abstain_macro_forecast",
@@ -1440,8 +1441,8 @@
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 3.48,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain no information about Federal Reserve interest rate policy, expectations, or forecasts for the second half of 2026. The documents discuss:  - Companies' own debt instruments and interest rate sensitivity [1, 2, 3, 4, 5] - Historical interest rate i"
+      "elapsed": 3.07,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain no information about Federal Reserve policy, interest rate forecasts, or expectations for rate changes in the second half of 2026.   The passages discuss: - CRM's interest rate sensitivity on its existing investment portfolio and debt instruments "
     },
     {
       "id": "abstain_nvda_stock_price",
@@ -1458,8 +1459,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 2.31,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain NVIDIA's current market capitalization. While passage [2] presents a five-year total shareholder return comparison graph showing NVIDIA stock performance relative to indices, and passage [4] shows historical stock price performance, neither"
+      "elapsed": 3.05,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain NVIDIA's current market capitalization.   While passage [2] includes a five-year total shareholder return graph showing NVIDIA stock price performance (with $100 invested on 1/31/2021 growing to $1,448.75 by 1/25/2026), and passage [4] show"
     },
     {
       "id": "abstain_earnings_call",
@@ -1476,8 +1477,8 @@
       "filter_applied": {
         "ticker": "MSFT"
       },
-      "elapsed": 5.55,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only Management's Discussion and Analysis (MD&A) sections from Microsoft's 10-K and 10-Q filings. They do not include any earnings call transcripts or direct quotes from Satya Nadella (or any other executive) speaking on earnings calls. MD&A secti"
+      "elapsed": 2.98,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only excerpts from Microsoft's SEC filings (10-K and 10-Q forms), which are regulatory documents focused on financial results, business operations, risk factors, and management discussion & analysis. They do not include transcripts or summaries of"
     },
     {
       "id": "abstain_analyst_rating",
@@ -1494,8 +1495,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 2.78,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only Apple Inc. (AAPL) SEC filings\u2014specifically 10-K forms from FY2024 and FY2025, an 8-K from October 2025, and related financial statements. These documents do not include analyst reports, price targets, or statements from Goldman Sachs or any o"
+      "elapsed": 2.89,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only Apple Inc. (AAPL) SEC filings\u2014specifically 10-K forms from FY2025 and FY2024, and 10-Q forms from Q1 2026 and Q1 2025. These are company-filed documents focused on Apple's financial statements, share repurchase programs, shareholder returns, "
     },
     {
       "id": "abstain_tsmc_financials",
@@ -1511,8 +1512,8 @@
         "AVGO"
       ],
       "filter_applied": null,
-      "elapsed": 3.07,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about TSMC's revenue in 2024. While passages [3] and [5] discuss AVGO's dependence on TSMC as a contract manufacturer and note that TSMC manufactured approximately 95% of AVGO's wafers, these passages describe AVGO's relationshi"
+      "elapsed": 5.23,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about TSMC's revenue in 2024.   The passages discuss AVGO's and AMD's reliance on TSMC as a contract manufacturer and note that \"TSMC, one of our CMs, manufactured approximately 95% of the wafers manufactured by our CMs during f"
     },
     {
       "id": "abstain_aapl_revenue_2010",
@@ -1529,8 +1530,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 2.83,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain financial information from Apple's FY2024 10-K, FY2024 10-Q (December 2024), and FY2024 10-Q (June 2024) filings. None of these passages include data from fiscal year 2010. The earliest fiscal year data presented in the passages is from fiscal yea"
+      "elapsed": 2.31,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain Apple financial data from fiscal years 2022 through 2026 (10-K and 10-Q filings from 2024-2026). There is no information about Apple's fiscal year 2010 revenue in any of the cited passages. To answer this question, I would need access to Apple's 1"
     },
     {
       "id": "abstain_qualcomm_chips",
@@ -1542,12 +1543,11 @@
       "answer_hit": true,
       "abstain_correct": true,
       "unique_tickers": [
-        "AVGO",
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 7.94,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain SEC filings from NVDA (Nvidia), AVGO (Broadcom), but do not include any filings from Qualcomm. The question asks specifically about Qualcomm's Snapdragon chip roadmap, which is not addressed in any of the numbered passages above.   To answer this "
+      "elapsed": 3.29,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only NVDA (NVIDIA) SEC filings from fiscal years 2025\u20132026 and Q2\u2013Q3 2024. They do not include any SEC filings from Qualcomm Incorporated. While Qualcomm is mentioned once in passage [1] as a competitor in the SoC (System-on-Chip) market (\"supplie"
     },
     {
       "id": "abstain_spacex",
@@ -1563,8 +1563,8 @@
         "TSLA"
       ],
       "filter_applied": null,
-      "elapsed": 2.96,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain SEC filings from META (10-Q filings from 2024-06 and 2024-09) and TSLA (10-Q filing from 2025-09). None of these passages discuss SpaceX or its Starlink satellite internet business. SpaceX is a private company and does not file with the SEC, so it"
+      "elapsed": 2.92,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain SEC filings exclusively from Tesla (TSLA) and Meta (META). SpaceX is a privately held company and does not file with the SEC; therefore, no information about SpaceX or its Starlink satellite internet business appears in these passages. Additionall"
     },
     {
       "id": "abstain_crypto_price",
@@ -1576,13 +1576,11 @@
       "answer_hit": true,
       "abstain_correct": true,
       "unique_tickers": [
-        "AMZN",
-        "MSFT",
         "TSLA"
       ],
       "filter_applied": null,
-      "elapsed": 2.65,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain information about the current price of Bitcoin. While passage [2] provides Tesla's Bitcoin holdings and fair values as of specific dates (December 31, 2025 and 2024), it does not state the current market price of Bitcoin. The fair value figures show"
+      "elapsed": 2.85,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain information about the current price of Bitcoin. While the passages [1, 3, 4, 5] document Tesla's Bitcoin holdings and their fair values at specific reporting dates (e.g., $1,007 million fair value for 11,509 units as of December 31, 2025 [3]), they "
     },
     {
       "id": "abstain_unemployment_rate",
@@ -1596,11 +1594,12 @@
       "unique_tickers": [
         "AMZN",
         "META",
-        "MSFT"
+        "MSFT",
+        "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 9.93,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain SEC filings from META, AMZN, and MSFT covering their financial statements and tax matters. None of these passages discuss the US unemployment rate. The question asks for macroeconomic data that falls entirely outside the scope of corporate financi"
+      "elapsed": 2.68,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only SEC filings from META, AMZN, MSFT, and ORCL discussing their corporate income tax positions, share-based compensation, and tax contingencies. None of the passages contain any information about the US unemployment rate, which is a macroeconomi"
     },
     {
       "id": "abstain_arm_ipo",
@@ -1616,8 +1615,8 @@
         "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 2.69,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain information about Oracle (ORCL) and Broadcom (AVGO) from their SEC filings, but they do not include any disclosures from ARM Holdings or its IPO documentation. ARM Holdings is not among the 13 companies listed in your dataset (AAPL, MSFT, GOOGL, A"
+      "elapsed": 2.21,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain information from SEC filings of Oracle (ORCL) and Broadcom (AVGO) only. There are no passages or disclosures related to ARM Holdings or its IPO. To answer your question about ARM Holdings' IPO disclosures, I would need access to ARM Holdings' S-1 "
     },
     {
       "id": "abstain_msft_linkedin_revenue",
@@ -1634,8 +1633,8 @@
       "filter_applied": {
         "ticker": "MSFT"
       },
-      "elapsed": 10.74,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided are from Microsoft's 10-K filings (FY2025 and FY2024), not proxy statements. While the passages contain LinkedIn revenue information, they do not represent a proxy statement filing.  Additionally, the passages do not break out LinkedIn as a fully \"standal"
+      "elapsed": 9.49,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only 10-Q and 10-K filings from Microsoft's financial statements (forms filed with the SEC for quarterly and annual reporting). They do not include proxy statements (DEF 14A filings), which are the documents that typically contain detailed disclos"
     },
     {
       "id": "abstain_aapl_product_release_date",
@@ -1652,8 +1651,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 2.78,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain any information about when Apple will release the iPhone 18.   The most recent product announcement mentioned in the passages is the iPhone 16 (announced in fiscal 2024, per passage [3]), and the most recent operating system announcement is"
+      "elapsed": 2.73,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about when Apple will release the iPhone 18.   The most recent product announcement mentioned in the passages is the iPhone 16 (announced in fiscal year 2024, per passage [3]). Passage [5] from Apple's 2025-06 10-Q discusses ope"
     },
     {
       "id": "abstain_oil_price",
@@ -1665,13 +1664,11 @@
       "answer_hit": true,
       "abstain_correct": true,
       "unique_tickers": [
-        "AAPL",
-        "AVGO",
-        "NFLX"
+        "TSLA"
       ],
       "filter_applied": null,
-      "elapsed": 0.34,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  Evidence is too thin to answer confidently (best rerank score: 0.252). The corpus may not cover this question."
+      "elapsed": 0.31,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  Evidence is too thin to answer confidently (best rerank score: 0.277). The corpus may not cover this question."
     },
     {
       "id": "abstain_googl_employee_count_2010",
@@ -1688,8 +1685,8 @@
       "filter_applied": {
         "ticker": "GOOGL"
       },
-      "elapsed": 2.7,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain employee counts only for recent periods: - December 31, 2025: 190,820 employees [1] - September 30, 2025: 190,167 employees [2] - June 30, 2025: 187,103 employees [5] - December 31, 2024: 183,323 employees [3]  None of the passages contain informa"
+      "elapsed": 2.33,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain employee count data only for recent years: 190,820 employees as of December 31, 2025 [1, 2]; 190,167 employees as of September 30, 2025 [3]; and 183,323 employees as of December 31, 2024 [5]. None of the passages contain information about Google's"
     },
     {
       "id": "abstain_nvda_twitter_sentiment",
@@ -1706,8 +1703,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 10.33,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only NVIDIA's SEC filings (10-Q quarterly reports from various periods in 2024-2025). These filings include financial statements, management discussion and analysis, litigation disclosures, and business segment descriptions.  None of the passages "
+      "elapsed": 2.7,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only NVIDIA's disclosure policy regarding which social media channels the company uses to announce material financial information (Corporate Blog, Technical Blog, LinkedIn, Facebook, Instagram, Threads, and YouTube). They do not contain any inform"
     },
     {
       "id": "abstain_tsla_elon_musk_tweets",
@@ -1724,8 +1721,8 @@
       "filter_applied": {
         "ticker": "TSLA"
       },
-      "elapsed": 2.28,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain no information about Elon Musk's recent tweets regarding Tesla's robotaxi plans. The passages discuss Tesla's Robotaxi service launch and business model from SEC filings (10-Q and 10-K forms), but they do not reference or quote any tweets from Elo"
+      "elapsed": 3.56,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain no information about Elon Musk's tweets or social media statements regarding Tesla's robotaxi plans.   While the passages discuss Tesla's Robotaxi service launch in June 2025 [2, 3] and litigation alleging misrepresentations about Robotaxi [5], th"
     },
     {
       "id": "abstain_meta_zuckerberg_compensation",
@@ -1741,8 +1738,8 @@
         "META"
       ],
       "filter_applied": null,
-      "elapsed": 3.61,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain information about Mark Zuckerberg's total compensation in fiscal year 2024. The passages are excerpts from META's 10-Q filings (quarterly reports) from 2024-2026 and one AVGO 10-K filing, focusing on sections covering:  - Unregistered sales"
+      "elapsed": 3.89,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided do not contain a proxy statement or detailed executive compensation disclosures for Mark Zuckerberg in fiscal year 2024.   While passages [1] and [2] describe Rule 10b5-1 trading plans that Zuckerberg entered into (allowing for sales of Class A and Class "
     },
     {
       "id": "abstain_gdp_growth",
@@ -1760,8 +1757,8 @@
         "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 9.05,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain financial information from SEC filings of large technology companies (AMZN, NVDA, ORCL, AAPL) but do not include any data on U.S. GDP growth in 2025.   These filings discuss company-specific metrics such as revenue guidance, operating income, clou"
+      "elapsed": 2.72,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain no information about US GDP growth in 2025. The documents are SEC filings from individual public companies (AMZN, NVDA, ORCL, AAPL) discussing their own financial performance, business operations, and forward-looking statements. While some passage"
     },
     {
       "id": "abstain_aapl_2030_forecast",
@@ -1778,8 +1775,8 @@
       "filter_applied": {
         "ticker": "AAPL"
       },
-      "elapsed": 3.07,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain Apple's historical and recent financial data (fiscal years 2022\u20132025) and management discussion of current business conditions, but they do not include any forward-looking revenue projections or guidance for fiscal year 2030.  While passage [2] no"
+      "elapsed": 10.78,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  I cannot answer this question because:  1. **No forward-looking revenue guidance for FY2030**: The passages provided contain Apple's historical financial results and current segment/product data through FY2025 (ended September 27, 2025) and Q1 FY2026 (ended December 27, 2025)."
     },
     {
       "id": "abstain_private_company",
@@ -1791,12 +1788,13 @@
       "answer_hit": true,
       "abstain_correct": true,
       "unique_tickers": [
+        "AMZN",
         "CRM",
         "META"
       ],
       "filter_applied": null,
-      "elapsed": 8.83,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  I cannot answer this question because Anthropic is not among the 13 companies in the provided passages (AAPL, MSFT, GOOGL, AMZN, META, NVDA, AVGO, TSLA, ORCL, CRM, AMD, NFLX, INTC). The passages contain financial information only from Salesforce (CRM) and Meta (META), neither "
+      "elapsed": 2.38,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain information about Amazon's investments in Anthropic (passages [1] and [2]), including convertible notes, preferred stock conversions, and commercial arrangements for AWS cloud services. However, they do not contain any information about Anthropic'"
     },
     {
       "id": "abstain_google_news_article",
@@ -1813,8 +1811,8 @@
       "filter_applied": {
         "ticker": "GOOGL"
       },
-      "elapsed": 3.21,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only SEC filings from Google (GOOGL 10-K and 10-Q forms). They do not include any information from the New York Times or any reporting about how Google is dealing with AI competition from OpenAI specifically.  While the passages do mention that Go"
+      "elapsed": 7.98,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain only Google's own SEC filings (10-K forms from FY2024 and FY2025). They do not include any reporting from the New York Times or any external media sources. The passages discuss Google's AI strategy, products, and infrastructure investments, but th"
     },
     {
       "id": "abstain_congressional_testimony",
@@ -1829,8 +1827,8 @@
         "META"
       ],
       "filter_applied": null,
-      "elapsed": 2.05,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain no information about Mark Zuckerberg's congressional testimony or any statements he made regarding data privacy. The passages discuss Meta's legal disputes, regulatory investigations, and settlements, but they do not include any congressional test"
+      "elapsed": 2.92,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages provided contain no information about Mark Zuckerberg's congressional testimony or any statements he made regarding data privacy. The passages exclusively cover META's legal proceedings, regulatory investigations, and litigation matters related to data practices. "
     },
     {
       "id": "cross_company_international_revenue_mix",
@@ -1843,14 +1841,14 @@
       "abstain_correct": null,
       "unique_tickers": [
         "AMZN",
-        "AVGO",
         "CRM",
         "GOOGL",
+        "META",
         "ORCL"
       ],
       "filter_applied": null,
-      "elapsed": 13.7,
-      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not provide sufficient comparable data across companies to determine which derives the largest share of revenue from international markets outside the United States.  **Why I cannot answer:**  1. **Limited company coverage**: Only three companies provide detail"
+      "elapsed": 12.75,
+      "answer_excerpt": "INSUFFICIENT_EVIDENCE  The passages do not contain sufficient comparable information to definitively answer which company derives the largest share of revenue from international markets.  **Why:**  1. **AMZN [1]** reports segment revenues (North America: $159.4B; International: $58.8B for six months"
     },
     {
       "id": "p2_aapl_msft_services_compare",
@@ -1866,8 +1864,8 @@
         "MSFT"
       ],
       "filter_applied": null,
-      "elapsed": 11.5,
-      "answer_excerpt": "## APPLE INC.  **Key Point:** Apple recognizes services revenue over time as services are delivered, with specific bundled services embedded in hardware sales allocated using estimated stand-alone selling prices (SSPs).  **Supporting Quote:** \"For the Company's Services net sales, control transfers "
+      "elapsed": 9.79,
+      "answer_excerpt": "# Apple Inc. (AAPL)  **Key Point:** Apple describes services as a bundled offering integrated with hardware, plus standalone subscription services across content and productivity domains.  **Supporting Quote:** \"The Company also offers digital content through subscription-based services, including A"
     },
     {
       "id": "p2_nvda_amd_intc_ai_positioning",
@@ -1884,8 +1882,8 @@
         "NVDA"
       ],
       "filter_applied": null,
-      "elapsed": 12.75,
-      "answer_excerpt": "# Competitive Positioning in AI Semiconductors  ## AMD  **Key Point:** AMD acknowledges dominant competitors and identifies itself as a challenger with significant but uncertain competitive prospects in AI.  **Supporting Evidence:** AMD states it \"see[s] significant opportunity in AI\" but \"expect[s]"
+      "elapsed": 13.47,
+      "answer_excerpt": "# Competitive Positioning in the AI Semiconductor Market  ## AMD  **Key Point:** AMD acknowledges intense competition from NVIDIA in AI accelerators while positioning itself as a multi-segment competitor across CPUs, GPUs, and DPUs. [1, 2, 3, 4, 5]  **Supporting Evidence:** AMD states: \"While we see"
     },
     {
       "id": "p2_nvda_data_center_multi_period",
@@ -1902,8 +1900,8 @@
       "filter_applied": {
         "ticker": "NVDA"
       },
-      "elapsed": 7.55,
-      "answer_excerpt": "# NVIDIA Data Center Revenue Growth Over Multiple Filings  ## Period-by-Period Breakdown:  **Q2 FY2025 (ended July 28, 2024):** Data Center revenue was $26.3 billion, \"up 16% from the previous quarter and up 154% from a year ago.\" [1]  **Q3 FY2025 (ended October 27, 2024):** The filing notes that \"R"
+      "elapsed": 11.07,
+      "answer_excerpt": "# NVIDIA Data Center Revenue Growth Analysis  ## Period-by-Period Breakdown  **Q2 FY2025 (July 2024)** Data Center revenue was $26.3 billion, up 16% from the previous quarter and up 154% from a year ago. [1]  **Q3 FY2025 (October 2024)** Revenue growth in the third quarter was driven by data center "
     },
     {
       "id": "p2_meta_capex_quarterly_trend",
@@ -1920,8 +1918,8 @@
       "filter_applied": {
         "ticker": "META"
       },
-      "elapsed": 14.61,
-      "answer_excerpt": "# META Capital Expenditure Trend Analysis  ## Period-by-Period Breakdown  **2024-06 (Six months ended June 30, 2024):** Capital expenditures totaled $14.57 billion in net purchases of property and equipment for the first half of 2024. Meta anticipated \"capital expenditures of approximately $37 billi"
+      "elapsed": 4.24,
+      "answer_excerpt": "I cannot provide a comprehensive answer to this question based on the passages provided.  The passages contain data on non-cash property and equipment items (property and equipment in accounts payable and accrued expenses), but these are not the same as capital expenditures. The passages do not incl"
     }
   ]
 }

@@ -50,28 +50,32 @@ DIVERSE_CANDIDATE_MULTIPLIER = 8                # pull more candidates for diver
 def canonical_section(item_title):
     """Map messy SEC item titles into stable section labels for filtering."""
     title = (item_title or "").lower()
-    title = title.replace("’", "'")
+    title = title.replace("’", "’")
     title = " ".join(title.split())
+    # Some SEC filers (e.g. Microsoft) emit headings with words split across
+    # adjacent styled spans ("RIS K FACTORS"). Compare against the compact
+    # (spaceless) form so those headings still map to the right label.
+    compact = title.replace(" ", "")
 
     if "management" in title and "discussion" in title:
         return "mda"
-    if "risk factor" in title:
+    if "riskfactor" in compact:
         return "risk_factors"
-    if "quantitative" in title and "market risk" in title:
+    if "quantitative" in title and ("market risk" in title or "marketrisk" in compact):
         return "market_risk"
-    if "financial statement" in title and "exhibit" in title:
+    if "financialstatement" in compact and ("exhibit" in title or "exhibit" in compact):
         return "exhibits"
-    if "financial statement" in title:
+    if "financialstatement" in compact:
         return "financial_statements"
-    if "unregistered sales" in title:
+    if "unregisteredsales" in compact:
         return "unregistered_sales"
-    if "legal proceedings" in title:
+    if "legalproceedings" in compact:
         return "legal_proceedings"
-    if "controls and procedures" in title:
+    if "controls" in title and "procedures" in title:
         return "controls"
-    if "results of operations" in title:
+    if "resultsofoperations" in compact:
         return "results_of_operations"
-    if "material definitive agreement" in title:
+    if "materialdefinitiveagreement" in compact:
         return "material_agreement"
     return "other"
 
