@@ -494,6 +494,83 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
     return msg.content[0].text, results, where
 
 
+# Fixed set of themes relevant to SEC filings, each mapped to a natural-language
+# query that the embedding model can match against chunk text. Order is display order.
+THEMES = {
+    "ai_ml":             "artificial intelligence machine learning generative AI large language model compute GPU",
+    "cybersecurity":     "cybersecurity data breach cyber attack security incident vulnerability",
+    "supply_chain":      "supply chain supplier component shortage inventory disruption",
+    "regulation":        "regulatory antitrust regulation compliance government oversight",
+    "china_geopolitics": "China geopolitical export control tariff sanction trade restriction",
+    "climate_esg":       "climate change sustainability carbon emission environmental regulation ESG",
+    "competition":       "competition competitive market share competitor emerging displacement",
+    "cloud_platform":    "cloud revenue growth infrastructure platform SaaS subscription services",
+}
+
+THEME_LABELS = {
+    "ai_ml":             "AI & ML",
+    "cybersecurity":     "Cybersecurity",
+    "supply_chain":      "Supply Chain",
+    "regulation":        "Regulation",
+    "china_geopolitics": "China & Geopolitics",
+    "climate_esg":       "Climate & ESG",
+    "competition":       "Competition",
+    "cloud_platform":    "Cloud & Platform",
+}
+
+
+def track_themes(collection, ticker, k=5):
+    """Retrieve the strongest evidence for each predefined theme across filing periods.
+
+    Returns retrieval-only results — no LLM call. For each theme the response
+    contains the best-matching chunk per distinct filing period, sorted
+    chronologically by filing_date.
+
+    Returns:
+        {
+          "ticker": str,
+          "themes": {
+            theme_key: {
+              "label": str,
+              "periods": [
+                {"period": str, "filing_date": str, "score": float,
+                 "text": str, "section": str, "form": str, "source_url": str},
+                ...
+              ]
+            }, ...
+          }
+        }
+    """
+    where = {"ticker": ticker}
+    themes_out = {}
+
+    for theme_key, query in THEMES.items():
+        # Broad pool so we span many periods; 8-K dates are noisy for trend analysis.
+        hits = search(collection, query, where=where, k=k * 4)
+        hits = [h for h in hits if h["metadata"].get("form", "").startswith("10-")]
+
+        # Keep the best-scored chunk per distinct period.
+        by_period: dict = {}
+        for hit in hits:
+            period = hit["metadata"].get("period", "")
+            score = hit.get("rerank_score", hit["similarity"])
+            if period not in by_period or score > by_period[period]["score"]:
+                by_period[period] = {
+                    "period":     period,
+                    "filing_date": hit["metadata"].get("filing_date", ""),
+                    "score":      round(score, 3),
+                    "text":       hit["text"][:400],
+                    "section":    hit["metadata"].get("section", ""),
+                    "form":       hit["metadata"].get("form", ""),
+                    "source_url": hit["metadata"].get("source_url", ""),
+                }
+
+        periods_sorted = sorted(by_period.values(), key=lambda x: x["filing_date"])
+        themes_out[theme_key] = {"label": THEME_LABELS[theme_key], "periods": periods_sorted}
+
+    return {"ticker": ticker, "themes": themes_out}
+
+
 def ask_with_contexts(question, collection, where=None, k=TOP_K, diverse=False, history=None):
     """Thin wrapper around ask() that returns retrieved contexts alongside the answer.
 

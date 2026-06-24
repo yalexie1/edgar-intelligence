@@ -56,8 +56,8 @@ the one above is done or the user explicitly says to skip it.**
 - Answering (`ask.py`): retrieves evidence and asks Claude for a grounded, cited answer.
   Auto-detects company names (falls back to prior turns for follow-ups), diversifies for
   cross-company questions, enforces the answer contract, abstains on weak evidence.
-- Backend (`api.py`, FastAPI): `/query` (POST), `/evals/results` (GET),
-  `/evals/ragas` (GET), `/health` (GET).
+- Backend (`api.py`, FastAPI): `/query` (POST), `/themes` (GET, retrieval-only theme
+  tracking), `/evals/results` (GET), `/evals/ragas` (GET), `/health` (GET).
 - Frontend (`index.html`): single-page chat UI with a follow-up bar, autocomplete,
   tooltips, filter controls, and a "New question" reset. Shows waking-up state on cold
   start with auto-retry.
@@ -220,7 +220,7 @@ on programmatic abstain paths. `ask_with_contexts()` added for RAGAS without dup
 retrieval. Dashboard RAGAS section wired up (shows placeholder until scores are run).
 RAGAS scoring blocked on Python 3.14 + nest_asyncio — see Known limitations.
 
-## P2 — Make the shallow features real (depth over breadth) ✓ DONE
+## P2 — Make the shallow features real (depth over breadth) ✓ DONE (including theme tracking)
 
 - **Cross-company comparison** (`ask.py`): when the question names specific companies,
   `_ask_cross_company()` retrieves evidence per-ticker separately (guaranteed coverage),
@@ -243,11 +243,11 @@ RAGAS scoring blocked on Python 3.14 + nest_asyncio — see Known limitations.
 
 - **Evals**: 104 total cases (4 new P2 cases), 103/104 (99%). Retrieval hit-rate: 100%.
 
-- **Theme tracking** (optional, not done): track a fixed theme list across periods.
-
-### Still possible
-
-- Theme tracking: optional follow-on if desired.
+- **Theme tracking** (`ask.py` + `api.py` + `dashboard.html`): `track_themes()` retrieves
+  the best evidence per predefined theme (AI/ML, Cybersecurity, Supply Chain, Regulation,
+  China/Geopolitics, Climate/ESG, Competition, Cloud/Platform) for a given ticker across
+  all 10-K/10-Q filing periods. Retrieval-only (no LLM cost). Wired to `GET /themes?ticker=`
+  and displayed as a score heat-map in the eval dashboard.
 - Theme tracking (optional, after section fix).
 
 Acceptance:

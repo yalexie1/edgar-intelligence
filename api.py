@@ -22,7 +22,7 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from ask import ask
+from ask import ask, track_themes
 from embed_and_search import CHROMA_DIR, COLLECTION, TOP_K
 
 load_dotenv()
@@ -183,6 +183,39 @@ def query(request: Request, q: Query):
         "sources": sources,
         "filter_applied": effective_where,
     }
+
+
+_VALID_TICKERS = {
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META",
+    "NVDA", "AVGO", "TSLA", "ORCL", "CRM", "AMD", "NFLX", "INTC",
+}
+
+
+@app.get("/themes")
+@limiter.limit("20/minute", exempt_when=_is_localhost)
+def themes_endpoint(request: Request, ticker: str, themes: str = ""):
+    """Theme tracking: best evidence per predefined topic across filing periods.
+
+    Returns retrieval-only results (no LLM cost) grouped by theme and period.
+    Useful for spotting which topics a company emphasises more or less over time.
+
+    Args:
+        ticker: company ticker (AAPL, NVDA, etc.)
+        themes: optional comma-separated list of theme keys to return (default: all)
+    """
+    if collection is None:
+        raise HTTPException(503, "Index not built. Run `python embed_and_search.py` first.")
+    t = ticker.upper()
+    if t not in _VALID_TICKERS:
+        raise HTTPException(
+            400,
+            f"Unknown ticker '{t}'. Supported: {sorted(_VALID_TICKERS)}",
+        )
+    result = track_themes(collection, t)
+    if themes:
+        requested = {s.strip() for s in themes.split(",") if s.strip()}
+        result["themes"] = {k: v for k, v in result["themes"].items() if k in requested}
+    return result
 
 
 @app.get("/evals/results")
