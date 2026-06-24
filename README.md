@@ -1,10 +1,10 @@
-# EDGAR Intelligence (v1)
+# EDGAR Intelligence (v2)
 
 Ask plain-English questions about SEC filings from 13 large public companies and get grounded, cited answers — built with retrieval-augmented generation (RAG).
 
 Try at: https://edgar-intelligence.vercel.app/
 
-NOTE: The backend is hosted on Render and spins down every 15 minutes when there's no activity. Please give up to 2-3 minutes for the backend to reboot if you're accessing the site for the first time.
+NOTE: The backend is hosted on Render and spins down every 15 minutes when there's no activity. Please give up to 30-60 seconds for the backend to reboot if you're accessing the site for the first time.
 
 ## What it does
 
