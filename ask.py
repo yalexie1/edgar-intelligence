@@ -21,17 +21,15 @@ Run:  python ask.py
 import argparse
 import sys
 
-import chromadb
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
 from embed_and_search import (
-    CHROMA_DIR,
-    COLLECTION,
     DIVERSE_CANDIDATE_MULTIPLIER,
     TOP_K,
     build_where,
     diversify_results,
+    get_pinecone_index,
     search,
 )
 
@@ -133,12 +131,11 @@ def is_temporal_question(question):
 
 
 def get_collection():
-    """Connect to the Chroma vector store built in Phase 2."""
-    client = chromadb.PersistentClient(path=CHROMA_DIR)
+    """Connect to the Pinecone index."""
     try:
-        return client.get_collection(COLLECTION)
+        return get_pinecone_index()
     except Exception:
-        sys.exit("No vector store found. Run `python embed_and_search.py` first.")
+        sys.exit("Could not connect to Pinecone. Check PINECONE_API_KEY in your .env.")
 
 
 def fmt_source(meta):

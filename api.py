@@ -13,7 +13,6 @@ import os
 from collections import OrderedDict
 from pathlib import Path
 
-import chromadb
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +23,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from ask import ask, track_themes, ANSWER_MODEL as _DEFAULT_MODEL
-from embed_and_search import CHROMA_DIR, COLLECTION, TOP_K
+from embed_and_search import TOP_K, get_pinecone_index
 
 load_dotenv()
 
@@ -123,9 +122,9 @@ app.add_middleware(
 
 # ── vector store ───────────────────────────────────────────────────────────────
 def connect():
-    """Connect to the Chroma vector store, or return None if it isn't built yet."""
+    """Connect to the Pinecone index, or return None if the key is missing."""
     try:
-        return chromadb.PersistentClient(path=CHROMA_DIR).get_collection(COLLECTION)
+        return get_pinecone_index()
     except Exception:
         return None
 
@@ -149,7 +148,11 @@ def health():
     """Instant liveness check — does not touch the index so cold /health is fast."""
     if collection is None:
         return {"status": "no index", "chunks": 0}
-    return {"status": "ok", "chunks": collection.count()}
+    try:
+        chunks = collection.describe_index_stats().total_vector_count
+    except Exception:
+        chunks = -1
+    return {"status": "ok", "chunks": chunks}
 
 
 def _is_localhost(request: Request) -> bool:
