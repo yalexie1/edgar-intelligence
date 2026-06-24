@@ -128,8 +128,19 @@
   <div class="controls">
     <select id="themeTicker">
       <option value="">Select company…</option>
-      ${["AAPL","AMD","AMZN","AVGO","CRM","GOOGL","INTC","META","MSFT","NFLX","NVDA","ORCL","TSLA"]
-          .map(t => `<option value="${t}">${t}</option>`).join("")}
+      <option value="AAPL">AAPL</option>
+      <option value="AMD">AMD</option>
+      <option value="AMZN">AMZN</option>
+      <option value="AVGO">AVGO</option>
+      <option value="CRM">CRM</option>
+      <option value="GOOGL">GOOGL</option>
+      <option value="INTC">INTC</option>
+      <option value="META">META</option>
+      <option value="MSFT">MSFT</option>
+      <option value="NFLX">NFLX</option>
+      <option value="NVDA">NVDA</option>
+      <option value="ORCL">ORCL</option>
+      <option value="TSLA">TSLA</option>
     </select>
     <button id="loadBtn" onclick="loadThemes()">Load themes</button>
   </div>
