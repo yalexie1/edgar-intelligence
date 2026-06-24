@@ -846,5 +846,40 @@
     "answer_contains": [],
     "min_unique_tickers": 3,
     "notes": "Geographic revenue breakdown disclosed by most companies; tests diverse retrieval on segment data"
+  },
+  {
+    "id": "p2_aapl_msft_services_compare",
+    "group": "cross_company",
+    "question": "How do Apple and Microsoft each describe their services or subscription-based revenue segments?",
+    "expected_tickers": ["AAPL", "MSFT"],
+    "answer_contains": [],
+    "notes": "P2 cross-company structured: tests per-ticker guaranteed retrieval; both companies have distinct services/cloud narratives"
+  },
+  {
+    "id": "p2_nvda_amd_intc_ai_positioning",
+    "group": "cross_company",
+    "question": "How do NVIDIA, AMD, and Intel each describe their competitive positioning in the AI semiconductor market?",
+    "expected_tickers": ["NVDA", "AMD", "INTC"],
+    "min_unique_tickers": 3,
+    "answer_contains": [],
+    "notes": "P2 3-company structured: INTC has sparse corpus coverage so the model should acknowledge thin evidence for INTC"
+  },
+  {
+    "id": "p2_nvda_data_center_multi_period",
+    "group": "temporal",
+    "question": "How has NVIDIA's data center revenue grown over multiple recent quarterly and annual filings?",
+    "expected_tickers": ["NVDA"],
+    "min_unique_periods": 3,
+    "answer_contains": [],
+    "notes": "P2 temporal structured: tests that _ask_temporal surfaces 3+ distinct filing periods for NVDA"
+  },
+  {
+    "id": "p2_meta_capex_quarterly_trend",
+    "group": "temporal",
+    "question": "How has Meta's capital expenditure trended across multiple quarterly filings over the past year?",
+    "expected_tickers": ["META"],
+    "min_unique_periods": 2,
+    "answer_contains": [],
+    "notes": "P2 temporal structured: Meta discloses capex in 10-Q MDA sections across multiple quarters"
   }
 ]

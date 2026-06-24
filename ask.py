@@ -5,8 +5,12 @@ Retrieves evidence from the multi-company Chroma index via search() and hands it
 to Claude with a strict answer contract: every claim must be quoted, sourced, and
 rated for confidence. If evidence is thin the model is instructed to abstain.
 
-For cross-company questions use --diverse so diversify_results() ensures each ticker
-gets at least one evidence slot before the model compares across companies.
+P2 upgrades (structured retrieval):
+  - Cross-company questions that name specific tickers retrieve evidence per-company
+    separately, so every named company is guaranteed at least k chunks in the prompt.
+  - Temporal trend questions retrieve from a large pool and group results by filing
+    period, presenting evidence chronologically for the model to synthesize.
+  - "Which companies" questions (no specific tickers) use an expanded diverse pool.
 
 Run:  python ask.py
       python ask.py --ticker AAPL
@@ -97,11 +101,35 @@ _CROSS_COMPANY_PHRASES = [
     "between companies", "each company",
 ]
 
+# Phrases that signal the user wants a temporal trend across multiple periods.
+# Note: "year over year" is intentionally excluded — it often appears in point-in-time
+# questions asking for a YoY growth rate in a single filing (e.g. "Q2 revenue grew
+# 154% YoY"), not a trend across multiple filings.
+_TEMPORAL_PHRASES = [
+    "trended", "trend", "over time", "quarter over quarter",
+    "how has", "how have", "grown over", "grown across", "changed over",
+    "changed between", "changed across", "multiple quarter", "multiple period",
+    "across quarter", "across period", "past year", "past two year",
+    "last several", "historically", "over the past", "over recent",
+]
+
+# How many results to retrieve per company in structured cross-company mode.
+CROSS_COMPANY_K_PER_TICKER = 3
+
+# How many extra candidates to pull for "which companies" style questions.
+BROAD_DIVERSE_MULTIPLIER = 16
+
 
 def is_cross_company_question(question):
     """Return True if the question is asking for a comparison across companies."""
     q = question.lower()
     return any(phrase in q for phrase in _CROSS_COMPANY_PHRASES)
+
+
+def is_temporal_question(question):
+    """Return True if the question is asking about a trend or change over time."""
+    q = question.lower()
+    return any(phrase in q for phrase in _TEMPORAL_PHRASES)
 
 
 def get_collection():
@@ -176,20 +204,228 @@ Question: {question}
 Answer (cite each claim with passage number, quote, source, and confidence):"""
 
 
+def build_cross_company_prompt(question, company_results, history=None):
+    """Build a structured comparison prompt with evidence grouped by company.
+
+    company_results is a dict {ticker: [result, ...]} ordered by company.
+    Passage numbers are assigned sequentially across all companies so the
+    model can cite them unambiguously.
+    """
+    history_section = ""
+    if history:
+        turns = []
+        for h in history:
+            prior = h["answer"][:500] + ("…" if len(h["answer"]) > 500 else "")
+            turns.append(f"User: {h['question']}\nAssistant: {prior}")
+        history_section = (
+            "Prior conversation (for context only):\n"
+            + "\n\n".join(turns)
+            + "\n\n"
+        )
+
+    passage_num = 1
+    sections = []
+    for ticker, results in company_results.items():
+        if not results:
+            sections.append(f"--- {ticker} ---\n(No relevant filings found for this company.)")
+            continue
+        company_name = results[0]["metadata"].get("company", ticker)
+        header = f"--- {ticker} ({company_name}) ---"
+        passages = []
+        for r in results:
+            meta = r["metadata"]
+            source_line = fmt_source(meta)
+            url = meta.get("source_url", "")
+            h = f"[{passage_num}] Source: {source_line}"
+            if url:
+                h += f"\n    URL: {url}"
+            passages.append(f"{h}\n{r['text']}")
+            passage_num += 1
+        sections.append(header + "\n" + "\n\n".join(passages))
+
+    context = "\n\n".join(sections)
+
+    return f"""You are a financial analyst comparing multiple companies based on their SEC filings. Answer ONLY from the numbered passages below.
+
+Answer contract — follow every rule:
+1. Ground every claim in the passages. Do not add facts from outside them.
+2. After each claim, cite the passage number(s) in square brackets, e.g. [1] or [2, 3].
+3. Structure your answer by company: for each company, state the key point, include a short supporting quote, cite the passage, and rate confidence (High / Medium / Low).
+4. End with a brief synthesis comparing the companies.
+5. If passages for a company are missing or very weak, say so explicitly rather than skipping it.
+6. If the overall evidence is too thin to compare confidently, start your entire response with INSUFFICIENT_EVIDENCE on its own line, then explain.
+
+{history_section}Passages by company:
+{context}
+
+Question: {question}
+
+Answer (company-by-company, then synthesize):"""
+
+
+def build_temporal_prompt(question, results, ticker, history=None):
+    """Build a structured temporal prompt with passages ordered chronologically.
+
+    results is a list of result dicts already sorted by period (oldest first).
+    """
+    history_section = ""
+    if history:
+        turns = []
+        for h in history:
+            prior = h["answer"][:500] + ("…" if len(h["answer"]) > 500 else "")
+            turns.append(f"User: {h['question']}\nAssistant: {prior}")
+        history_section = (
+            "Prior conversation (for context only):\n"
+            + "\n\n".join(turns)
+            + "\n\n"
+        )
+
+    passages = []
+    current_period = None
+    for n, r in enumerate(results, start=1):
+        meta = r["metadata"]
+        period = meta.get("period", "")
+        if period != current_period:
+            current_period = period
+            passages.append(f"\n--- {period or 'Unknown period'} ---")
+        source_line = fmt_source(meta)
+        url = meta.get("source_url", "")
+        h = f"[{n}] Source: {source_line}"
+        if url:
+            h += f"\n    URL: {url}"
+        passages.append(f"{h}\n{r['text']}")
+
+    context = "\n".join(passages)
+
+    return f"""You are a financial analyst tracking changes over time in SEC filings for {ticker}. Answer ONLY from the numbered passages below.
+
+Answer contract — follow every rule:
+1. Ground every claim in the passages. Do not add facts from outside them.
+2. After each claim, cite the passage number(s) in square brackets.
+3. Work chronologically: for each period, state the key figure or fact, quote briefly, and cite.
+4. After the period-by-period breakdown, describe the overall trend (up/down/mixed) and how it changed.
+5. Be specific with numbers and dates. If evidence for a period is thin, say so.
+6. If the passages are too sparse to describe a trend, start your entire response with INSUFFICIENT_EVIDENCE on its own line.
+
+{history_section}Passages by filing period (chronological):
+{context}
+
+Question: {question}
+
+Answer (period-by-period, then trend summary):"""
+
+
+def _ask_cross_company(collection, question, tickers, k, history):
+    """Structured retrieval: pull evidence per named company, then synthesize.
+
+    Returns (answer_text, flat_results_list, None). effective_where is None
+    because there is no single filter — each company has its own.
+    """
+    k_per = max(CROSS_COMPANY_K_PER_TICKER, k)
+    company_results = {}
+    for ticker in tickers:
+        where = {"ticker": ticker}
+        results = search(collection, question, where=where, k=k_per)
+        company_results[ticker] = results
+
+    flat = [r for rs in company_results.values() for r in rs]
+    if not flat:
+        return (
+            "INSUFFICIENT_EVIDENCE\n\nNo evidence found for any of the specified companies.",
+            [],
+            None,
+        )
+
+    # Abstain if no company has even weak evidence.
+    best = max((r.get("rerank_score", r["similarity"]) for r in flat), default=0)
+    if best < LOW_SIMILARITY_THRESHOLD:
+        return (
+            f"INSUFFICIENT_EVIDENCE\n\nEvidence is too thin across all companies "
+            f"(best rerank score: {best:.3f}).",
+            flat,
+            None,
+        )
+
+    prompt = build_cross_company_prompt(question, company_results, history=history)
+    client = Anthropic()
+    msg = client.messages.create(
+        model=ANSWER_MODEL,
+        max_tokens=1400,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return msg.content[0].text, flat, None
+
+
+def _ask_temporal(collection, question, ticker, k, history):
+    """Structured temporal retrieval: group evidence by period, sort chronologically.
+
+    Retrieves a large candidate pool for the ticker, then picks the top result
+    from each distinct period so the prompt covers the full time range.
+
+    Returns (answer_text, results_list, effective_where).
+    """
+    # Pull a big candidate pool so we span as many periods as possible.
+    raw_k = k * DIVERSE_CANDIDATE_MULTIPLIER * 2
+    where = {"ticker": ticker}
+    candidates = search(collection, question, where=where, k=raw_k)
+
+    if not candidates:
+        return (
+            "INSUFFICIENT_EVIDENCE\n\nThe corpus returned no results for this ticker.",
+            [],
+            where,
+        )
+
+    # Group by period, keep the best-scored chunk(s) per period.
+    period_buckets: dict = {}
+    for r in candidates:
+        period = r["metadata"].get("period") or r["metadata"].get("filing_date", "")
+        if period not in period_buckets:
+            period_buckets[period] = []
+        period_buckets[period].append(r)
+
+    # Take up to 2 chunks per period (best-ranked already from search()).
+    chunks_per_period = max(1, k // max(len(period_buckets), 1))
+    selected = []
+    for period in sorted(period_buckets.keys()):
+        selected.extend(period_buckets[period][:chunks_per_period])
+
+    # Hard cap at k * 2 so the prompt stays manageable.
+    selected = selected[:k * 2]
+
+    best = max((r.get("rerank_score", r["similarity"]) for r in selected), default=0)
+    if best < LOW_SIMILARITY_THRESHOLD:
+        return (
+            f"INSUFFICIENT_EVIDENCE\n\nEvidence is too thin (best rerank score: {best:.3f}).",
+            selected,
+            where,
+        )
+
+    prompt = build_temporal_prompt(question, selected, ticker, history=history)
+    client = Anthropic()
+    msg = client.messages.create(
+        model=ANSWER_MODEL,
+        max_tokens=1200,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return msg.content[0].text, selected, where
+
+
 def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
     """Retrieve evidence and produce a grounded, cited answer.
 
     Returns (answer_text, results_list, effective_where). Each result dict has:
     id, similarity, lexical_score, rerank_score, text, metadata.
 
-    If no explicit `where` filter is given, the question is scanned for company
-    names. A single named company → filter to that ticker. Multiple named
-    companies → enable diverse mode so each gets at least one evidence slot.
+    Routing (P2):
+      - Multiple named companies → _ask_cross_company: guaranteed evidence per ticker.
+      - Single named company + temporal signals → _ask_temporal: per-period grouping.
+      - "Which company" questions (no specific tickers) → expanded diverse pool.
+      - Everything else → original single-search path.
 
-    history is an optional list of {"question": str, "answer": str} dicts from
-    prior turns. When the current question doesn't name a company, the history
-    is scanned for one so retrieval stays focused on the right ticker across
-    follow-up questions.
+    If no explicit `where` filter is given, the question is scanned for company
+    names. When the follow-up doesn't name a company, history is scanned so
+    retrieval stays focused on the right ticker.
     """
     if where is None:
         tickers = detect_tickers(question)
@@ -202,15 +438,29 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None):
                 if tickers:
                     break
 
+        # P2: structured per-company retrieval for explicit multi-company questions.
+        if len(tickers) > 1 and not diverse:
+            return _ask_cross_company(collection, question, tickers, k, history)
+
+        # P2: structured temporal retrieval for single-company trend questions.
+        if len(tickers) == 1 and is_temporal_question(question) and not diverse:
+            return _ask_temporal(collection, question, tickers[0], k, history)
+
         if len(tickers) == 1:
             where = {"ticker": tickers[0]}
-        elif len(tickers) > 1 and not diverse:
-            diverse = True
         elif len(tickers) == 0 and not diverse and is_cross_company_question(question):
+            # "Which companies" style: use a larger candidate pool so diversify_results
+            # has a better chance of surfacing many distinct tickers.
             diverse = True
+            k = max(k, TOP_K)
 
     # Diverse mode fetches more candidates so diversify_results has variety to pick from.
-    raw_k = k * DIVERSE_CANDIDATE_MULTIPLIER if diverse else k
+    # "Which companies" questions use BROAD_DIVERSE_MULTIPLIER for more ticker coverage.
+    if diverse:
+        multiplier = BROAD_DIVERSE_MULTIPLIER if is_cross_company_question(question) else DIVERSE_CANDIDATE_MULTIPLIER
+        raw_k = k * multiplier
+    else:
+        raw_k = k
     results = search(collection, question, where=where, k=raw_k)
 
     if diverse:
