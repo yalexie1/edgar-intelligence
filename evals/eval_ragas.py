@@ -26,12 +26,37 @@ Run:
 """
 
 import argparse
+import asyncio
 import csv
 import datetime
 import json
 import sys
 import time
 from pathlib import Path
+
+# ── Python 3.14 + nest_asyncio compatibility ───────────────────────────────────
+# ragas applies nest_asyncio at import time, which patches asyncio.run() so that
+# asyncio.current_task() always returns None. Python 3.14's asyncio.Timeout.__aenter__
+# raises "Timeout should be used inside a task" when current_task() is None. Patching
+# asyncio.timeout is insufficient because downstream libraries (websockets) capture the
+# reference via `from asyncio import timeout` before our patch runs. Instead, patch
+# Timeout.__aenter__ on the class directly so ALL callers are covered.
+import asyncio.timeouts as _at
+
+_real_aenter = _at.Timeout.__aenter__
+_State = _at._State  # module-level enum in asyncio.timeouts
+
+async def _patched_aenter(self):
+    if asyncio.current_task() is None:
+        # Not inside a task (nest_asyncio compat) — mark as ENTERED with no deadline
+        # so the context manager is a no-op. LLM clients have their own timeouts.
+        self._state = _State.ENTERED
+        self._task = None
+        self._timeout_handler = None
+        return self
+    return await _real_aenter(self)
+
+_at.Timeout.__aenter__ = _patched_aenter
 
 # ── optional imports ───────────────────────────────────────────────────────────
 try:

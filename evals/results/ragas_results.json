@@ -1,0 +1,117 @@
+{
+  "summary": {
+    "run_date": "2026-06-23T15:03:50.769571",
+    "n_cases": 10,
+    "subset": true,
+    "group": null,
+    "judge_note": "RAGAS uses an LLM judge (OpenAI GPT by default). Scores vary by model version and are directional signals, not ground truth.",
+    "metrics": {
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    }
+  },
+  "cases": [
+    {
+      "id": "aapl_fy2025_revenue",
+      "group": "factual",
+      "question": "What was Apple's total revenue in fiscal year 2025?",
+      "elapsed": 3.26,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "nvda_datacenter_q2fy25",
+      "group": "factual",
+      "question": "What was NVIDIA's data center revenue in the second quarter of fiscal year 2025 and how did it grow year over year?",
+      "elapsed": 3.59,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "msft_cloud_growth",
+      "group": "factual",
+      "question": "What percentage did Microsoft's overall revenue grow in its most recent quarterly filing?",
+      "elapsed": 4.59,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "googl_cloud_growth",
+      "group": "factual",
+      "question": "How fast did Google Cloud revenue grow year over year in Google's most recent quarterly filing?",
+      "elapsed": 2.1,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "avgo_gross_margin",
+      "group": "factual",
+      "question": "What was Broadcom's gross margin percentage in its most recent quarterly filing?",
+      "elapsed": 3.15,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "aapl_revenue_yoy",
+      "group": "factual",
+      "question": "How did Apple's total revenue change between fiscal year 2024 and fiscal year 2025?",
+      "elapsed": 3.72,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "nflx_strategy",
+      "group": "factual",
+      "question": "What is Netflix's stated strategy for growing its business?",
+      "elapsed": 3.88,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "tsla_competition",
+      "group": "factual",
+      "question": "How does Tesla describe the competitive landscape in the EV market?",
+      "elapsed": 4.2,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "amd_ai_risks",
+      "group": "factual",
+      "question": "What AI-related risks does AMD disclose in its SEC filings?",
+      "elapsed": 6.15,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    },
+    {
+      "id": "intc_challenges",
+      "group": "factual",
+      "question": "What major business challenges does Intel describe in its most recent filings?",
+      "elapsed": 3.81,
+      "faithfulness": NaN,
+      "answer_relevancy": NaN,
+      "context_precision": NaN,
+      "context_recall": NaN
+    }
+  ]
+}

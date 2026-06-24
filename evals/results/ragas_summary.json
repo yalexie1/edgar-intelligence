@@ -1,0 +1,13 @@
+{
+  "run_date": "2026-06-23T15:03:50.769571",
+  "n_cases": 10,
+  "subset": true,
+  "group": null,
+  "judge_note": "RAGAS uses an LLM judge (OpenAI GPT by default). Scores vary by model version and are directional signals, not ground truth.",
+  "metrics": {
+    "faithfulness": NaN,
+    "answer_relevancy": NaN,
+    "context_precision": NaN,
+    "context_recall": NaN
+  }
+}

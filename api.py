@@ -38,6 +38,7 @@ _default_origins = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5500",
+    "http://localhost:5500",
     "http://localhost:8080",  # python -m http.server 8080
 ]
 _extra_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]

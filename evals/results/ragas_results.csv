@@ -1,0 +1,11 @@
+id,group,question,elapsed,faithfulness,answer_relevancy,context_precision,context_recall
+aapl_fy2025_revenue,factual,What was Apple's total revenue in fiscal year 2025?,3.26,nan,nan,nan,nan
+nvda_datacenter_q2fy25,factual,What was NVIDIA's data center revenue in the second quarter of fiscal year 2025 and how did it grow year over year?,3.59,nan,nan,nan,nan
+msft_cloud_growth,factual,What percentage did Microsoft's overall revenue grow in its most recent quarterly filing?,4.59,nan,nan,nan,nan
+googl_cloud_growth,factual,How fast did Google Cloud revenue grow year over year in Google's most recent quarterly filing?,2.1,nan,nan,nan,nan
+avgo_gross_margin,factual,What was Broadcom's gross margin percentage in its most recent quarterly filing?,3.15,nan,nan,nan,nan
+aapl_revenue_yoy,factual,How did Apple's total revenue change between fiscal year 2024 and fiscal year 2025?,3.72,nan,nan,nan,nan
+nflx_strategy,factual,What is Netflix's stated strategy for growing its business?,3.88,nan,nan,nan,nan
+tsla_competition,factual,How does Tesla describe the competitive landscape in the EV market?,4.2,nan,nan,nan,nan
+amd_ai_risks,factual,What AI-related risks does AMD disclose in its SEC filings?,6.15,nan,nan,nan,nan
+intc_challenges,factual,What major business challenges does Intel describe in its most recent filings?,3.81,nan,nan,nan,nan

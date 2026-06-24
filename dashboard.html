@@ -247,6 +247,7 @@ async function load() {
   if (data) {
     allCases = data.cases || [];
     render(data);
+    loadRagas();
   } else {
     const isNetworkError = lastErr && !lastErr.isHttp;
     app.innerHTML = `<div class="err">
@@ -437,7 +438,6 @@ async function loadRagas() {
   }
 }
 
-loadRagas();
 </script>
 </body>
 </html>
