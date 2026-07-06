@@ -265,3 +265,137 @@ section wired up.
 - **Caching**: in-memory LRU (256 entries) in `api.py`.
 - **Pinecone migration**: replaced Chroma with Pinecone serverless to fix Render OOM.
   8,141 vectors uploaded. Evals: 103/104 (99%), no regression.
+
+# v3 — work plan
+
+Five improvements ranked most-to-least urgent. None touch frozen files (`ingest.py`,
+`embed_and_search.py`) or break the `/query` response contract.
+
+## 1. Streaming responses (SSE)
+
+**The gap.** Every query blocks for 5–20 s, then renders the full answer at once. No
+feedback that anything is happening — the most noticeable gap vs. any production LLM app.
+
+**Resume value.** "Implemented SSE streaming for real-time LLM output, cutting
+time-to-first-token from ~10 s to <1 s across FastAPI, Anthropic Streaming API, and a
+vanilla-JS ReadableStream consumer."
+
+**Steps.**
+1. `ask.py` — add `ask_stream()`: mirrors `ask()` routing but uses
+   `with client.messages.stream(...) as stream: for text in stream.text_stream: yield text`,
+   then yields a sentinel `{"__meta__": True, "results": ..., "effective_where": ...}`.
+   Keep `ask()` intact (evals + cache use it).
+2. `api.py` — add `POST /query/stream`: same `Query` schema + validation; returns
+   `StreamingResponse(media_type="text/event-stream")`. Generator yields
+   `data: {"token": "..."}`, then `data: {"sources": [...], "filter_applied": ...}`,
+   then `data: [DONE]`. No caching on the stream endpoint.
+3. `index.html` — switch `submitQuestion()` to `fetch` + `ReadableStream`. Create the
+   answer div immediately (empty) so tokens stream into it. Parse SSE lines: render
+   tokens on `evt.token`, render sources on `evt.sources`. Re-parse markdown on `[DONE]`.
+   Shorten the slow-timer from 8 s to ~2 s (streaming makes cold-start less jarring).
+4. Verify: tokens stream visibly in the UI; `python evals/eval.py` still passes 103/104
+   against the unchanged `/query` endpoint.
+
+## 2. Two-stage retrieval with cross-encoder reranking (Cohere)
+
+**The gap.** Current reranker: `cosine + 0.08 * lexical_score`. Can't distinguish a
+chunk that *answers* the question from one that merely *mentions* the same terms.
+A cross-encoder reads question + passage together — strictly better at relevance.
+
+**Resume value.** "Replaced single-stage cosine retrieval with Pinecone ANN (top-50
+recall) → Cohere Rerank cross-encoder (top-5 precision), measured on a 104-case eval."
+
+**Steps.**
+1. `requirements.txt` — add `cohere>=5.0`.
+2. `.env.example` — add `COHERE_API_KEY=` (free tier: 1000 calls/month).
+3. `ask.py` — add `_rerank_with_cohere(results, question, k)`: calls
+   `cohere.ClientV2(...).rerank(model="rerank-v3.5", ...)`, falls back to original order
+   if `COHERE_API_KEY` is unset.
+4. `ask.py` — in `ask()`, change the retrieval call to `k=CANDIDATE_K` to get the full
+   50-candidate pool, then pass through `_rerank_with_cohere(..., k=k)`. Do the same in
+   `_ask_cross_company()`. Skip reranking in `_ask_temporal()` (chronological order
+   must be preserved).
+5. `render.yaml` — add `COHERE_API_KEY` env var (value set in Render dashboard).
+6. Run `python evals/eval.py` before and after; record delta in CLAUDE.md.
+
+## 3. Source passage preview in the answer UI
+
+**The gap.** Citation cards show metadata badges but not the actual text the model cited.
+Verifying a claim requires navigating to the SEC filing manually.
+
+**Resume value.** "Added inline evidence preview to citation cards: users expand any
+cited passage to read the exact text the model referenced, without leaving the interface."
+
+**Steps.**
+1. `api.py` — add `"text": r["text"][:500]` to each entry in the `sources` list.
+   Additive field — doesn't break the frozen response contract.
+2. `index.html` — add CSS for `.source-preview` (hidden by default, `display:block` when
+   `.open`) and `.source-toggle` button.
+3. `index.html` — in `buildTurn()`, append a toggle button + hidden `<div class="source-preview">`
+   to each source card. Toggle opens/closes the preview and flips the button label
+   (`"passage"` / `"hide"`).
+4. Verify: evals still pass (they call `/query`, not the UI); payload grows ~0.5 KB/source
+   (note this tradeoff).
+
+## 4. Section-to-section temporal diffs
+
+**The gap.** `_ask_temporal()` groups evidence by period for trend questions, but cannot
+compare the *same section* across two discrete periods. Financial analysts routinely read
+consecutive 10-Ks to spot new disclosures — "What changed in NVDA's risk factors since
+last year?" — and this query type has no handler.
+
+**Resume value.** "Implemented section-level diff analysis across consecutive SEC filings:
+detects 'what changed' queries, retrieves the same section from two reporting periods, and
+generates a structured before/after comparison."
+
+**Steps.**
+1. `ask.py` — add `_DIFF_PHRASES` list and `is_section_diff_question(question)`.
+2. `ask.py` — add `_SECTION_HINTS` dict and `detect_section(question)` (maps "risk factor"
+   → `"risk_factors"`, "md&a" → `"mda"`, etc.; defaults to `"risk_factors"`).
+3. `ask.py` — add `build_diff_prompt(question, period_chunks, ticker, section)`:
+   structures evidence as `--- {period} ---` blocks and instructs the model to list
+   (a) what was added/strengthened, (b) what was removed/softened, (c) what stayed the
+   same, with quotes and citations.
+4. `ask.py` — add `_ask_section_diff(collection, question, ticker, k, history, model=None)`:
+   filters by `{"$and": [{"ticker": ticker}, {"section": section_key}]}`, retrieves
+   `CANDIDATE_K` candidates, groups by `period`, takes top 2 chunks for the 2 most
+   recent distinct periods. Falls back to `_ask_temporal()` if fewer than 2 periods found.
+5. `ask.py` — route in `ask()` **before** the temporal check:
+   `if len(tickers) == 1 and is_section_diff_question(question) and not diverse`.
+6. `evals/dataset.json` — add 5+ cases (e.g. "What changed in NVIDIA's risk factors
+   between its two most recent 10-Ks?") with `"group": "temporal"` and
+   `"answer_contains": []` (retrieval-only; diff wording is non-deterministic).
+
+## 5. Section filter in UI (full-stack filter completion)
+
+**The gap.** `embed_and_search.py` supports section filtering and `build_where()` handles
+it, but the `Query` schema only exposes `ticker` and `form` — `section` is silently
+ignored if sent. The UI has no section control. The feature is ~70% built at the backend
+layer but entirely inaccessible to users.
+
+**Resume value.** "Completed the full-stack filter pipeline by exposing section-level
+filtering (MD&A, Risk Factors, Financial Statements, 4 others) through the API and a new
+frontend control — a capability that existed at the retrieval layer but was unreachable."
+
+**Steps.**
+1. `api.py` — add `section: str = ""` to `Query`. In the filter-building block, add
+   `if q.section: filters.append({"section": q.section.lower()})`.
+2. `index.html` — add a `.control-group` div (same pattern as ticker/form controls) with
+   a `<select id="sectionFilter">` containing: All sections, MD&A (`mda`), Risk Factors
+   (`risk_factors`), Results of Operations (`results_of_operations`), Financial Statements
+   (`financial_statements`), Market Risk (`market_risk`), Legal Proceedings
+   (`legal_proceedings`), Controls & Procedures (`controls`).
+3. `index.html` — wire up: declare `const sectionSel`; add `section: sectionSel.value || ""`
+   to the fetch payload; reset `sectionSel.value = ""` in the "New question" handler.
+4. Verify: select "Risk Factors", ask "What are the biggest risks?" for AAPL; confirm
+   `filter_applied` in the response includes `{"section": "risk_factors"}`.
+
+## Summary
+
+| # | Improvement | Files | Resume metric |
+|---|-------------|-------|---------------|
+| 1 | Streaming SSE | `ask.py`, `api.py`, `index.html` | Time-to-first-token: ~10 s → <1 s |
+| 2 | Cohere cross-encoder reranking | `ask.py`, `requirements.txt`, `.env.example` | Retrieval precision delta on 104-case eval |
+| 3 | Source passage preview | `api.py`, `index.html` | Inline evidence verification, no extra API calls |
+| 4 | Section-to-section temporal diffs | `ask.py`, `evals/dataset.json` | 5+ new passing eval cases for "what changed" queries |
+| 5 | Section filter in UI | `api.py`, `index.html` | 7 canonical sections filterable end-to-end |
