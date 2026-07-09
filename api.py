@@ -16,13 +16,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from ask import ask, track_themes, ANSWER_MODEL as _DEFAULT_MODEL
+from ask import ask, ask_stream, track_themes, ANSWER_MODEL as _DEFAULT_MODEL
 from embed_and_search import TOP_K, get_pinecone_index
 
 load_dotenv()
@@ -138,6 +138,7 @@ class Query(BaseModel):
     k: int = TOP_K
     ticker: str = ""
     form: str = ""
+    section: str = ""
     diverse: bool = False
     history: list = []  # prior turns: [{"question": str, "answer": str}, ...]
 
@@ -159,12 +160,43 @@ def _is_localhost(request: Request) -> bool:
     return (request.client and request.client.host in ("127.0.0.1", "::1"))
 
 
-@app.post("/query")
-@limiter.limit("10/minute", exempt_when=_is_localhost)
-@limiter.limit("200/day",   exempt_when=_is_localhost)
-def query(request: Request, q: Query):
-    """Answer one question from the corpus, with cited sources."""
-    # Fast validation — no LLM cost.
+def _build_sources(results: list) -> list:
+    """Shape retrieval results into the citation list shared by /query and /query/stream."""
+    sources = []
+    for i, r in enumerate(results):
+        meta = r["metadata"]
+        sources.append({
+            "n": i + 1,
+            "ticker": meta.get("ticker", ""),
+            "form": meta.get("form", ""),
+            "period": meta.get("period") or meta.get("filing_date", ""),
+            "section": meta.get("section", ""),
+            "source_url": meta.get("source_url", ""),
+            "similarity": round(r["similarity"], 3),
+            "rerank_score": round(r.get("rerank_score", r["similarity"]), 3),
+            "text": r["text"][:500],
+        })
+    return sources
+
+
+def _build_where(q: Query):
+    """Build an optional metadata filter dict from ticker/form/section request fields."""
+    filters = []
+    if q.ticker:
+        filters.append({"ticker": q.ticker.upper()})
+    if q.form:
+        filters.append({"form": q.form.upper()})
+    if q.section:
+        filters.append({"section": q.section.lower()})
+    if len(filters) == 1:
+        return filters[0]
+    if len(filters) > 1:
+        return {"$and": filters}
+    return None
+
+
+def _validate_query(q: Query) -> None:
+    """Shared request validation for /query and /query/stream."""
     if not q.question.strip():
         raise HTTPException(400, "Question cannot be empty.")
     if len(q.question) > MAX_QUESTION_LEN:
@@ -175,20 +207,18 @@ def query(request: Request, q: Query):
     if collection is None:
         raise HTTPException(503, "Index not built. Run `python embed_and_search.py` first.")
 
+
+@app.post("/query")
+@limiter.limit("10/minute", exempt_when=_is_localhost)
+@limiter.limit("200/day",   exempt_when=_is_localhost)
+def query(request: Request, q: Query):
+    """Answer one question from the corpus, with cited sources."""
+    _validate_query(q)  # fast — no LLM cost
+
     # Global daily cap — checked here so only requests that reach the LLM are counted.
     _check_global_cap()
 
-    # Build an optional metadata filter from the request fields.
-    where = None
-    filters = []
-    if q.ticker:
-        filters.append({"ticker": q.ticker.upper()})
-    if q.form:
-        filters.append({"form": q.form.upper()})
-    if len(filters) == 1:
-        where = filters[0]
-    elif len(filters) > 1:
-        where = {"$and": filters}
+    where = _build_where(q)
 
     try:
         # Only cache when there's no conversation history — history makes each
@@ -207,27 +237,53 @@ def query(request: Request, q: Query):
     except Exception as e:
         raise HTTPException(500, f"Failed to answer: {e}")
 
-    sources = []
-    for i, r in enumerate(results):
-        meta = r["metadata"]
-        sources.append({
-            "n": i + 1,
-            "ticker": meta.get("ticker", ""),
-            "form": meta.get("form", ""),
-            "period": meta.get("period") or meta.get("filing_date", ""),
-            "section": meta.get("section", ""),
-            "source_url": meta.get("source_url", ""),
-            "similarity": round(r["similarity"], 3),
-            "rerank_score": round(r.get("rerank_score", r["similarity"]), 3),
-        })
-
     # Success shape is frozen — do not change field names or remove fields.
     return {
         "question": q.question,
         "answer": answer,
-        "sources": sources,
+        "sources": _build_sources(results),
         "filter_applied": effective_where,
     }
+
+
+@app.post("/query/stream")
+@limiter.limit("10/minute", exempt_when=_is_localhost)
+@limiter.limit("200/day",   exempt_when=_is_localhost)
+def query_stream(request: Request, q: Query):
+    """Answer one question, streaming answer tokens as Server-Sent Events.
+
+    Same validation and request contract as /query. Emits `data: {...}` lines:
+      - {"token": "..."}                                — one per answer token, in order
+      - {"sources": [...], "filter_applied": ...}        — once, after all tokens
+      - [DONE]                                            — terminal marker (always last)
+
+    Not cached — conversation-shaped requests already skip the cache in /query, and a
+    streamed response can't be replayed from a cache key without re-simulating token
+    arrival, which isn't worth it for a demo server.
+    """
+    _validate_query(q)
+    _check_global_cap()
+    where = _build_where(q)
+
+    def event_stream():
+        try:
+            results, effective_where = [], where
+            for chunk in ask_stream(
+                collection, q.question, where=where, k=q.k, diverse=q.diverse,
+                history=q.history, model=ANSWER_MODEL,
+            ):
+                if isinstance(chunk, dict) and chunk.get("__meta__"):
+                    results = chunk["results"]
+                    effective_where = chunk["effective_where"]
+                    payload = {"sources": _build_sources(results), "filter_applied": effective_where}
+                    yield f"data: {json.dumps(payload)}\n\n"
+                else:
+                    yield f"data: {json.dumps({'token': chunk})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 _VALID_TICKERS = {

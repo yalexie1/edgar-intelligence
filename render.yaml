@@ -13,6 +13,8 @@ services:
         sync: false        # set manually in the Render dashboard
       - key: PINECONE_API_KEY
         sync: false        # set manually in the Render dashboard
+      - key: COHERE_API_KEY
+        sync: false        # optional; falls back to local rerank if unset
       - key: ALLOWED_ORIGINS
         sync: false        # optional; defaults cover the Vercel frontend and localhost
       - key: ANSWER_MODEL

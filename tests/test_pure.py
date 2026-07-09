@@ -7,6 +7,7 @@ Covers:
   - diversify_results  (embed_and_search)
   - detect_tickers     (ask)
   - chunk_section      (ingest)
+  - _route             (ask) — retrieval-strategy routing shared by ask()/ask_stream()
 """
 
 import types
@@ -14,7 +15,7 @@ import types
 import pytest
 
 from embed_and_search import build_where, canonical_section, diversify_results, TOP_K
-from ask import detect_tickers
+from ask import detect_tickers, _route
 from ingest import chunk_section, CHUNK_SIZE, MIN_CHUNK_CHARS
 
 
@@ -275,3 +276,104 @@ class TestChunkSection:
 
     def test_whitespace_only(self):
         assert chunk_section("   \n\n   ") == []
+
+
+# ── _route ────────────────────────────────────────────────────────────────────
+# _route() decides which retrieval strategy ask() and ask_stream() use. Both
+# functions call it, so a bug here would silently desync the blocking and
+# streaming answer paths — worth locking down with its own test class.
+
+class TestRoute:
+    def test_multi_company_routes_cross_company(self):
+        route = _route("Compare Apple and Microsoft revenue", None, TOP_K, False, None)
+        assert route["kind"] == "cross_company"
+        assert set(route["tickers"]) == {"AAPL", "MSFT"}
+
+    def test_multi_company_with_diverse_skips_cross_company(self):
+        # diverse=True disables the structured cross-company path even with 2+ tickers.
+        route = _route("Compare Apple and Microsoft revenue", None, TOP_K, True, None)
+        assert route["kind"] == "plain"
+        assert route["diverse"] is True
+        assert route["where"] is None
+
+    def test_single_company_temporal_routes_temporal(self):
+        route = _route("How has NVIDIA's data center revenue trended?", None, TOP_K, False, None)
+        assert route["kind"] == "temporal"
+        assert route["ticker"] == "NVDA"
+
+    def test_single_company_temporal_with_diverse_skips_temporal(self):
+        route = _route("How has NVIDIA's data center revenue trended?", None, TOP_K, True, None)
+        assert route["kind"] == "plain"
+        assert route["diverse"] is True
+        assert route["where"] == {"ticker": "NVDA"}
+
+    def test_single_company_non_temporal_sets_where(self):
+        route = _route("What is Apple's revenue?", None, TOP_K, False, None)
+        assert route == {"kind": "plain", "where": {"ticker": "AAPL"}, "k": TOP_K, "diverse": False}
+
+    def test_no_company_cross_company_phrase_enables_diverse(self):
+        route = _route("Which company has the highest gross margin?", None, TOP_K, False, None)
+        assert route == {"kind": "plain", "where": None, "k": TOP_K, "diverse": True}
+
+    def test_no_company_no_special_phrase_plain_defaults(self):
+        route = _route("What is the weather in New York?", None, TOP_K, False, None)
+        assert route == {"kind": "plain", "where": None, "k": TOP_K, "diverse": False}
+
+    def test_explicit_where_skips_ticker_detection(self):
+        # An explicit filter bypasses ticker/history scanning entirely, even when
+        # the question would otherwise trigger structured cross-company retrieval.
+        where = {"ticker": "TSLA"}
+        route = _route("Compare Apple and Microsoft revenue", where, TOP_K, False, None)
+        assert route == {"kind": "plain", "where": where, "k": TOP_K, "diverse": False}
+
+    def test_history_fallback_finds_ticker(self):
+        history = [{"question": "What was Apple's revenue?", "answer": "..."}]
+        route = _route("How did management explain that?", None, TOP_K, False, history)
+        assert route == {"kind": "plain", "where": {"ticker": "AAPL"}, "k": TOP_K, "diverse": False}
+
+    def test_history_fallback_enables_temporal(self):
+        history = [{"question": "What was NVIDIA's revenue?", "answer": "..."}]
+        route = _route("How has that trended over the past year?", None, TOP_K, False, history)
+        assert route["kind"] == "temporal"
+        assert route["ticker"] == "NVDA"
+
+    def test_history_ignored_when_question_names_company(self):
+        history = [{"question": "What was Apple's revenue?", "answer": "..."}]
+        route = _route("What was Tesla's revenue?", None, TOP_K, False, history)
+        assert route == {"kind": "plain", "where": {"ticker": "TSLA"}, "k": TOP_K, "diverse": False}
+
+    # ── section/form-only filter interaction (bug fix 2026-07-09) ──────────────
+    # A filter that doesn't pin a ticker (e.g. the UI's Section dropdown used
+    # alone) must not disable structured cross-company/temporal routing — only
+    # an explicit ticker filter should do that.
+
+    def test_section_only_filter_still_routes_cross_company(self):
+        where = {"section": "risk_factors"}
+        route = _route("Compare Apple and Microsoft revenue", where, TOP_K, False, None)
+        assert route["kind"] == "cross_company"
+        assert set(route["tickers"]) == {"AAPL", "MSFT"}
+        assert route["extra_where"] == where
+
+    def test_section_only_filter_still_routes_temporal(self):
+        where = {"section": "mda"}
+        route = _route("How has NVIDIA's data center revenue trended?", where, TOP_K, False, None)
+        assert route["kind"] == "temporal"
+        assert route["ticker"] == "NVDA"
+        assert route["extra_where"] == where
+
+    def test_section_only_filter_merges_into_plain_where(self):
+        where = {"section": "mda"}
+        route = _route("What is Apple's revenue?", where, TOP_K, False, None)
+        assert route == {
+            "kind": "plain",
+            "where": {"$and": [{"section": "mda"}, {"ticker": "AAPL"}]},
+            "k": TOP_K,
+            "diverse": False,
+        }
+
+    def test_ticker_and_section_filter_together_skips_detection(self):
+        # A filter that already pins a ticker still bypasses detection entirely,
+        # exactly like the ticker-only case — this is unchanged behavior.
+        where = {"$and": [{"ticker": "TSLA"}, {"section": "risk_factors"}]}
+        route = _route("Compare Apple and Microsoft revenue", where, TOP_K, False, None)
+        assert route == {"kind": "plain", "where": where, "k": TOP_K, "diverse": False}

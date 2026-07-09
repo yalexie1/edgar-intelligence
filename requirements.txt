@@ -7,6 +7,7 @@ pinecone>=3.0
 fastapi
 uvicorn[standard]
 slowapi
+cohere>=5.0
 pytest
 
 # Optional — only needed for evals/eval_ragas.py (requires Python 3.11/3.12)

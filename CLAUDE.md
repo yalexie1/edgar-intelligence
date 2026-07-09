@@ -17,20 +17,30 @@ Update this file after any major change to the codebase.
 
 ## Current status (read this first)
 
-v2 is complete. P0, P1, P2, and P3 are all done.
+v2 is complete. P0, P1, P2, and P3 are all done. v3 steps 1, 2, 3, and 5 (streaming SSE,
+Cohere cross-encoder reranking, source passage preview, section filter in UI) are done.
 
 - Scale: 13 companies, 8,141 chunks, 10-K / 10-Q / 8-K over ~2 years.
 - Frontend: single-page chat UI (`index.html`) with waking-up state and auto-retry on
-  cold start. Eval dashboard (`dashboard.html`). Standalone theme tracker (`themes.html`).
+  cold start. Answers stream token-by-token via SSE. Filter controls now include ticker,
+  form, and section (7 canonical sections); each citation card has an expandable inline
+  passage preview (see v3 §3, §5 below). Eval dashboard (`dashboard.html`). Standalone
+  theme tracker (`themes.html`).
 - Backend: FastAPI on Render's free tier. Cold starts are visible in the UI; the Pinecone
-  client lazy-inits on first `/query` so `/health` responds instantly.
+  client lazy-inits on first `/query` so `/health` responds instantly. `POST /query/stream`
+  streams the same answer as Server-Sent Events (see v3 §1 below). `Query.section` and
+  each source's `text` (first 500 chars) are additive fields on the existing contract.
 - Vector store: Pinecone serverless (AWS us-east-1, cosine, free tier). No local index —
   Render's 512MB RAM is sufficient because there's nothing to build on boot.
-- Evals: 104-case golden set; last run 103/104 (99%). Cross-company: 22/22 (100%),
-  temporal: 12/12 (100%), factual: 43/44, abstain: 26/26. Retrieval hit-rate: 100%.
-  RAGAS optional layer is wired up but blocked on Python 3.14 + nest_asyncio (see
-  Known limitations). Deterministic suite is primary.
-- Unit tests: 51/51 passing (`tests/test_pure.py`). No network or paid API calls.
+- Retrieval: two-stage — Pinecone ANN (cosine + lexical boost) pulls a 50-candidate pool,
+  then Cohere `rerank-v3.5` re-ranks for precision before truncating to k (see v3 §2).
+  Falls back to the local rerank order if `COHERE_API_KEY` is unset or the call fails.
+- Evals: 104-case golden set; last run 103/104 (99%), re-confirmed 2026-07-10 after adding
+  Cohere reranking (unchanged — same single pre-existing failure, no new regressions).
+  Cross-company: 22/22 (100%), temporal: 12/12 (100%), factual: 43/44, abstain: 26/26.
+  Retrieval hit-rate: 100%. RAGAS optional layer is wired up but blocked on Python 3.14 +
+  nest_asyncio (see Known limitations). Deterministic suite is primary.
+- Unit tests: 66/66 passing (`tests/test_pure.py`). No network or paid API calls.
 
 Pipeline file state:
 - `ingest.py` and `embed_and_search.py` are FROZEN. Any change requires a full
@@ -77,7 +87,7 @@ Pipeline file state:
 - Eval dashboard (`dashboard.html`): fetches `/evals/results` and `/evals/ragas`; renders
   metric cards, per-group bars, question-type breakdown, sortable case table, RAGAS section
   (shows placeholder when not yet run), and a link card to `themes.html`.
-- Unit tests (`tests/test_pure.py`): 51 cases, all passing. Pure functions only.
+- Unit tests (`tests/test_pure.py`): 66 cases, all passing. Pure functions only.
 
 ## The retrieval interface (what `ask.py` calls)
 
@@ -140,7 +150,7 @@ clears it on "New question." Cache is bypassed when `history` is present.
 - `index.html` — current. Chat frontend with waking-up state + nav links.
 - `dashboard.html` — current. Eval dashboard; links to `themes.html`.
 - `themes.html` — current. Standalone theme tracker with score explanation callout.
-- `tests/test_pure.py`, `tests/__init__.py` — unit tests (51 cases, no network calls).
+- `tests/test_pure.py`, `tests/__init__.py` — unit tests (66 cases, no network calls).
 - `evals/eval.py`, `evals/dataset.json`, `evals/last_results.json` — current.
 - `evals/eval_ragas.py` — current. Optional RAGAS LLM-judge layer (see Known limitations).
 - `evals/results/` — RAGAS output files written here when eval_ragas.py is run.
@@ -178,6 +188,9 @@ clears it on "New question." Cache is bypassed when `history` is present.
 - Answer model: `ANSWER_MODEL` env var (default: `claude-haiku-4-5-20251001` for dev;
   `claude-sonnet-4-6` set in `render.yaml` for the deployed demo). `ask()` and both
   structured retrieval helpers accept a `model=` kwarg.
+- Cohere `rerank-v3.5` (`COHERE_API_KEY`, optional) cross-encoder reranks the top-50
+  Pinecone candidates down to k. Free tier: 1000 calls/month. Falls back to the local
+  cosine+lexical order if the key is unset or the call fails — never a hard dependency.
 - Embedding: BATCH_SIZE=40 texts/call + exponential backoff.
 - Pinecone upsert: UPSERT_BATCH_SIZE=100 vectors/call (recommended for large metadata).
 - In-memory LRU cache in `api.py` (256 entries, `OrderedDict`). Bypassed when `history`
@@ -211,6 +224,13 @@ clears it on "New question." Cache is bypassed when `history` is present.
 - Theme tracker scores are rerank_score values (cosine + lexical boost). They measure
   retrievability of a topic — not frequency, not sentiment. Small differences between
   periods are not meaningful. The `themes.html` page explains this explicitly.
+- Section filter (v3 §5): combining it with a sparse-coverage ticker (INTC's 22 chunks)
+  or an unusual section can return thin or empty results, since the filter narrows an
+  already-small per-company slice. `_route()` now merges a section/form-only filter with
+  any detected ticker so cross-company/temporal routing still works when the filter is
+  set without a ticker (fixed 2026-07-09 — previously any explicit filter silently
+  disabled structured retrieval), but the UI gives no feedback when a combination is thin
+  beyond the normal abstain message.
 
 ## Conventions and rules
 
@@ -271,32 +291,68 @@ section wired up.
 Five improvements ranked most-to-least urgent. None touch frozen files (`ingest.py`,
 `embed_and_search.py`) or break the `/query` response contract.
 
-## 1. Streaming responses (SSE)
+## 1. Streaming responses (SSE) ✓ DONE (2026-07-08)
 
 **The gap.** Every query blocks for 5–20 s, then renders the full answer at once. No
 feedback that anything is happening — the most noticeable gap vs. any production LLM app.
 
-**Resume value.** "Implemented SSE streaming for real-time LLM output, cutting
-time-to-first-token from ~10 s to <1 s across FastAPI, Anthropic Streaming API, and a
-vanilla-JS ReadableStream consumer."
+**Resume value.** "Implemented SSE streaming for real-time LLM output across FastAPI,
+the Anthropic Streaming API, and a vanilla-JS `ReadableStream` consumer, so users see the
+answer forming instead of staring at a blank screen for the full round trip."
 
-**Steps.**
-1. `ask.py` — add `ask_stream()`: mirrors `ask()` routing but uses
-   `with client.messages.stream(...) as stream: for text in stream.text_stream: yield text`,
-   then yields a sentinel `{"__meta__": True, "results": ..., "effective_where": ...}`.
-   Keep `ask()` intact (evals + cache use it).
-2. `api.py` — add `POST /query/stream`: same `Query` schema + validation; returns
-   `StreamingResponse(media_type="text/event-stream")`. Generator yields
-   `data: {"token": "..."}`, then `data: {"sources": [...], "filter_applied": ...}`,
-   then `data: [DONE]`. No caching on the stream endpoint.
-3. `index.html` — switch `submitQuestion()` to `fetch` + `ReadableStream`. Create the
-   answer div immediately (empty) so tokens stream into it. Parse SSE lines: render
-   tokens on `evt.token`, render sources on `evt.sources`. Re-parse markdown on `[DONE]`.
-   Shorten the slow-timer from 8 s to ~2 s (streaming makes cold-start less jarring).
-4. Verify: tokens stream visibly in the UI; `python evals/eval.py` still passes 103/104
-   against the unchanged `/query` endpoint.
+**What shipped.**
+- `ask.py`: the routing logic previously inlined in `ask()` was extracted into `_route()`
+  (decides cross_company / temporal / plain) plus one `_prepare_*` helper per path
+  (`_prepare_cross_company`, `_prepare_temporal`, `_prepare_plain`) that does retrieval +
+  prompt-building + abstain checks without calling the model. `ask()` and the new
+  `ask_stream()` both call `_route()` + the matching `_prepare_*`, so the two paths can't
+  drift out of sync. `ask()`'s public signature and return shape are unchanged (evals +
+  the LRU cache in `api.py` still call it as before). `ask_stream()` yields text chunks
+  via `with client.messages.stream(...) as stream: for text in stream.text_stream: yield
+  text`, then a final `{"__meta__": True, "results": ..., "effective_where": ...}` sentinel.
+  Abstain cases yield the abstain string as one chunk (no model call), matching `ask()`.
+- `api.py`: added `POST /query/stream`, same `Query` schema + validation as `/query`
+  (factored into shared `_validate_query()` / `_build_where()` / `_build_sources()`
+  helpers). Returns `StreamingResponse(media_type="text/event-stream")` emitting
+  `data: {"token": "..."}` lines, then one `data: {"sources": [...], "filter_applied":
+  ...}` line, then `data: [DONE]`. Not cached — matches the existing rule that
+  conversation-shaped requests bypass the cache; extended it to all streamed responses.
+- `index.html`: `submitQuestion()` now does `fetch` + `res.body.getReader()`, parsing
+  `data:` lines out of the buffered chunks. The `.answer` div is created empty up front
+  (holding a status message), then cleared and appended to as tokens arrive; markdown +
+  citation parsing (`marked.parse` + `withCitations`) runs once at the end, not per token,
+  to avoid flicker. Sources render once the `sources` event lands. Retries (3x, 5 s
+  backoff) still cover total connection failure before any token arrives; a failure
+  mid-stream keeps the partial answer and appends an inline error instead of discarding it.
+  The slow-start (cold-start warning) timer stayed at 8 s — see the correction below;
+  an initial attempt to drop it to 2 s shipped a real bug caught via live testing.
+- `tests/test_pure.py`: added `TestRoute` (11 cases) covering `_route()`'s branch logic —
+  multi-company, temporal, diverse overrides, history fallback, explicit `where`. Pure,
+  no network calls. Full suite: 62/62 passing.
 
-## 2. Two-stage retrieval with cross-encoder reranking (Cohere)
+**Measured, not assumed:** time-to-first-token for a real question (`"What was Apple's
+total revenue in fiscal year 2025?"`) was ~7.1 s of a ~10.3 s total — most of the latency
+is embedding + Pinecone retrieval before generation even starts, not generation itself.
+Streaming does not fix retrieval latency; it only stops the UI from being blank for the
+*entire* round trip. Do not repeat the "<1 s time-to-first-token" framing from the
+original plan — it wasn't measured and isn't accurate for this corpus/retrieval setup.
+`python evals/eval.py` re-run afterward: 103/104 (99%), identical to the pre-streaming
+baseline (the one failure, `avgo_gross_margin`, is the pre-existing known retrieval gap —
+see Known limitations). `/query` itself was not modified.
+
+**Bug found via live testing, fixed same day:** the plan's step 3 said to shorten the
+UI's cold-start warning timer from 8 s to ~2 s, reasoning that "streaming makes cold-start
+less jarring." That reasoning didn't hold: since normal warm time-to-first-token is
+already ~7 s (see above), a 2 s threshold fired the "backend is waking up" message on
+essentially every request, cold or not — confirmed live when a second, back-to-back
+question still showed the cold-start notice. `index.html`'s `slowTimer` was reverted to
+8 s (the same value the old blocking UI used, which was already calibrated against this
+same retrieval-bound latency). Lesson: a UI-timing change justified by an unmeasured
+latency claim should be checked against the actual measured number before shipping —
+the ~7 s figure was already recorded two paragraphs up in this same file when the 2 s
+value was chosen.
+
+## 2. Two-stage retrieval with cross-encoder reranking (Cohere) ✓ DONE (2026-07-10)
 
 **The gap.** Current reranker: `cosine + 0.08 * lexical_score`. Can't distinguish a
 chunk that *answers* the question from one that merely *mentions* the same terms.
@@ -305,20 +361,50 @@ A cross-encoder reads question + passage together — strictly better at relevan
 **Resume value.** "Replaced single-stage cosine retrieval with Pinecone ANN (top-50
 recall) → Cohere Rerank cross-encoder (top-5 precision), measured on a 104-case eval."
 
-**Steps.**
-1. `requirements.txt` — add `cohere>=5.0`.
-2. `.env.example` — add `COHERE_API_KEY=` (free tier: 1000 calls/month).
-3. `ask.py` — add `_rerank_with_cohere(results, question, k)`: calls
-   `cohere.ClientV2(...).rerank(model="rerank-v3.5", ...)`, falls back to original order
-   if `COHERE_API_KEY` is unset.
-4. `ask.py` — in `ask()`, change the retrieval call to `k=CANDIDATE_K` to get the full
-   50-candidate pool, then pass through `_rerank_with_cohere(..., k=k)`. Do the same in
-   `_ask_cross_company()`. Skip reranking in `_ask_temporal()` (chronological order
-   must be preserved).
-5. `render.yaml` — add `COHERE_API_KEY` env var (value set in Render dashboard).
-6. Run `python evals/eval.py` before and after; record delta in CLAUDE.md.
+**What shipped.**
+- `requirements.txt` — added `cohere>=5.0` (installed: 7.0.5).
+- `.env.example` / `.env` — `COHERE_API_KEY=` added (free tier: 1000 calls/month).
+- `ask.py` — added `_rerank_with_cohere(results, question, k)`: lazily builds a
+  `cohere.ClientV2` (via `_get_cohere_client()`), calls `.rerank(model="rerank-v3.5",
+  query=question, documents=[r["text"] for r in results], top_n=min(k, len(results)))`,
+  and maps `response.results[i].index` back onto the original result dicts (so metadata,
+  `rerank_score`, etc. all survive). Falls back to `results[:k]` — the existing local
+  cosine+lexical order — if `COHERE_API_KEY` is unset *or* the API call raises for any
+  reason (quota exhausted, network error, etc.); reranking is a precision upgrade, not a
+  hard dependency for a free-tier demo.
+- `ask.py` — wired into `_prepare_plain`'s non-diverse branch (fetches the full
+  `CANDIDATE_K` pool via `search(..., k=CANDIDATE_K)`, then `_rerank_with_cohere(...,
+  k)`) and into `_prepare_cross_company` (per-ticker: each named company's own
+  `CANDIDATE_K` pool is reranked down to `k_per` *before* flattening across companies,
+  so a weaker company's best chunk can't be crowded out by a stronger company's —
+  preserves the existing per-ticker coverage guarantee). Both `ask()` and `ask_stream()`
+  go through these same `_prepare_*` functions, so blocking and streaming responses are
+  reranked identically. Deliberately **not** wired into the diverse-mode branch of
+  `_prepare_plain` (ticker spread via `diversify_results` is the goal there, not raw
+  relevance — reranking first would let the cross-encoder's favorite ticker crowd out
+  the others) or into `_prepare_temporal` (chronological period order must be preserved;
+  reranking would undermine the per-period grouping).
+- `render.yaml` — added `COHERE_API_KEY` env var (value set in Render dashboard,
+  `sync: false`; optional — falls back to local rerank if unset on the deployed server).
 
-## 3. Source passage preview in the answer UI
+**Verified:** live query against `AAPL` (`_prepare_plain`) came back with results whose
+`rerank_score` (the local cosine+lexical field) was no longer monotonically decreasing —
+confirming Cohere actually reordered the pool rather than passing it through unchanged.
+`python evals/eval.py` re-run after shipping: 103/104 (99%), identical to the
+pre-reranking baseline — same single pre-existing failure (`avgo_gross_margin`, the
+known retrieval gap, see Known limitations), no new regressions. 66/66 unit tests still
+pass (reranking only reorders within `_prepare_*`, which the routing tests don't
+exercise against a live Cohere call).
+
+**Not measured:** no before/after precision delta on individual cases beyond the
+aggregate 103/104 — the eval set's `answer_contains` checks are pass/fail, not scored,
+so a reranking improvement that changes *which* correct passage gets cited (without
+changing the pass/fail outcome) wouldn't show up in this harness. Worth a manual
+side-by-side spot-check before quoting a "reranking improved precision" claim on a
+resume — right now the honest claim is "shipped and did not regress the eval suite,"
+not "measurably improved retrieval precision."
+
+## 3. Source passage preview in the answer UI ✓ DONE (2026-07-09)
 
 **The gap.** Citation cards show metadata badges but not the actual text the model cited.
 Verifying a claim requires navigating to the SEC filing manually.
@@ -326,16 +412,26 @@ Verifying a claim requires navigating to the SEC filing manually.
 **Resume value.** "Added inline evidence preview to citation cards: users expand any
 cited passage to read the exact text the model referenced, without leaving the interface."
 
-**Steps.**
-1. `api.py` — add `"text": r["text"][:500]` to each entry in the `sources` list.
-   Additive field — doesn't break the frozen response contract.
-2. `index.html` — add CSS for `.source-preview` (hidden by default, `display:block` when
-   `.open`) and `.source-toggle` button.
-3. `index.html` — in `buildTurn()`, append a toggle button + hidden `<div class="source-preview">`
-   to each source card. Toggle opens/closes the preview and flips the button label
-   (`"passage"` / `"hide"`).
-4. Verify: evals still pass (they call `/query`, not the UI); payload grows ~0.5 KB/source
-   (note this tradeoff).
+**What shipped.**
+- `api.py`: `_build_sources()` adds `"text": r["text"][:500]` to each source entry.
+  Additive field on both `/query` and `/query/stream` — the frozen response contract
+  (existing field names) is unchanged.
+- `index.html`: `.source` was restructured from a single flex row into a column
+  container — the old row markup (`source-n`, badges, link, scores) moved into a nested
+  `.source-row` div, with a new `.source-toggle` button appended and a sibling
+  `.source-preview` div (escaped via the existing `escHtml()`) below it, hidden by
+  default (`display: none`) and shown via an `.open` class. `renderSourceItems()` only
+  emits the toggle/preview when `s.text` is present. Since source cards are inserted via
+  `innerHTML` (no per-card listeners at render time), one delegated click listener on
+  the `#chat` container handles every toggle across every turn — finds the closest
+  `.source`, flips `.open` on its `.source-preview`, and swaps the button label between
+  "passage" and "hide".
+- Verified: `curl` against `/query` confirms each source now carries a `text` field
+  (500-char preview); `node --check` on the extracted script confirmed valid JS.
+
+**Not done:** no attempt to trim/summarize the passage — it's a raw 500-char slice of
+the chunk, which can end mid-sentence. Acceptable for a "does this passage look
+plausible" check; not polished prose.
 
 ## 4. Section-to-section temporal diffs
 
@@ -366,7 +462,7 @@ generates a structured before/after comparison."
    between its two most recent 10-Ks?") with `"group": "temporal"` and
    `"answer_contains": []` (retrieval-only; diff wording is non-deterministic).
 
-## 5. Section filter in UI (full-stack filter completion)
+## 5. Section filter in UI (full-stack filter completion) ✓ DONE (2026-07-09)
 
 **The gap.** `embed_and_search.py` supports section filtering and `build_where()` handles
 it, but the `Query` schema only exposes `ticker` and `form` — `section` is silently
@@ -377,25 +473,44 @@ layer but entirely inaccessible to users.
 filtering (MD&A, Risk Factors, Financial Statements, 4 others) through the API and a new
 frontend control — a capability that existed at the retrieval layer but was unreachable."
 
-**Steps.**
-1. `api.py` — add `section: str = ""` to `Query`. In the filter-building block, add
-   `if q.section: filters.append({"section": q.section.lower()})`.
-2. `index.html` — add a `.control-group` div (same pattern as ticker/form controls) with
-   a `<select id="sectionFilter">` containing: All sections, MD&A (`mda`), Risk Factors
-   (`risk_factors`), Results of Operations (`results_of_operations`), Financial Statements
-   (`financial_statements`), Market Risk (`market_risk`), Legal Proceedings
-   (`legal_proceedings`), Controls & Procedures (`controls`).
-3. `index.html` — wire up: declare `const sectionSel`; add `section: sectionSel.value || ""`
-   to the fetch payload; reset `sectionSel.value = ""` in the "New question" handler.
-4. Verify: select "Risk Factors", ask "What are the biggest risks?" for AAPL; confirm
-   `filter_applied` in the response includes `{"section": "risk_factors"}`.
+**What shipped.**
+- `api.py`: added `section: str = ""` to `Query`. `_build_where()` appends
+  `{"section": q.section.lower()}` when set, combining with ticker/form via the existing
+  `$and` path — no change to filter-format handling downstream in `embed_and_search.py`.
+- `index.html`: added a `.control-group` (same visual pattern as ticker/form) with
+  `<select id="sectionFilter">` — All sections, MD&A (`mda`), Risk Factors
+  (`risk_factors`), Results of Operations (`results_of_operations`), Financial Statements
+  (`financial_statements`), Market Risk (`market_risk`), Legal Proceedings
+  (`legal_proceedings`), Controls & Procedures (`controls`). Wired `sectionSel.value`
+  into the `/query/stream` fetch payload and reset it in the "New question" handler.
+- Verified live: `POST /query` with `{"ticker": "AAPL", "section": "risk_factors"}`
+  returned `filter_applied: {"$and": [{"ticker": "AAPL"}, {"section": "risk_factors"}]}`
+  and both retrieved chunks carried `"section": "risk_factors"`.
+- Full 104-case eval re-run after both this and §3 shipped: 103/104 (99%), identical to
+  baseline — same pre-existing `avgo_gross_margin` failure, no new regressions from
+  either additive change. 62/62 unit tests still pass.
+
+**Bug found via code review, fixed same day:** a code-review pass on this diff caught a
+real regression this feature exposed: `_route()`'s `if where is None:` guard treated
+*any* explicit filter — including a section-only or form-only one, with no ticker — the
+same as an intentional manual override, so it skipped ticker detection entirely. Before
+this shipped, that only mattered for the pre-existing `form` filter; the new, far more
+prominent Section dropdown made it much easier to hit: picking "Risk Factors" with no
+ticker and asking "Compare Apple and Microsoft's biggest risks" silently fell through to
+an undifferentiated single search instead of `_ask_cross_company()`'s guaranteed
+per-ticker retrieval. Fixed by replacing the `where is None` check with
+`_has_ticker_filter(where)` — ticker detection now runs unless a ticker is already
+pinned, and any ticker found is merged into the existing filter via a new `_merge_where()`
+helper (threaded through as `extra_where` into `_prepare_cross_company`/`_prepare_temporal`
+so the section/form constraint survives structured retrieval too, not just the plain
+path). See the Known Limitations entry on the section filter for the residual caveat.
 
 ## Summary
 
-| # | Improvement | Files | Resume metric |
-|---|-------------|-------|---------------|
-| 1 | Streaming SSE | `ask.py`, `api.py`, `index.html` | Time-to-first-token: ~10 s → <1 s |
-| 2 | Cohere cross-encoder reranking | `ask.py`, `requirements.txt`, `.env.example` | Retrieval precision delta on 104-case eval |
-| 3 | Source passage preview | `api.py`, `index.html` | Inline evidence verification, no extra API calls |
-| 4 | Section-to-section temporal diffs | `ask.py`, `evals/dataset.json` | 5+ new passing eval cases for "what changed" queries |
-| 5 | Section filter in UI | `api.py`, `index.html` | 7 canonical sections filterable end-to-end |
+| # | Improvement | Files | Resume metric | Status |
+|---|-------------|-------|---------------|--------|
+| 1 | Streaming SSE | `ask.py`, `api.py`, `index.html` | Time-to-first-token: full round trip → tokens render as generated (~7 s TTFT, retrieval-bound — see §1) | ✓ DONE |
+| 2 | Cohere cross-encoder reranking | `ask.py`, `requirements.txt`, `.env.example`, `render.yaml` | Pinecone top-50 recall → Cohere top-k precision; no eval regression (103/104, see v3 §2 caveat on precision measurement) | ✓ DONE |
+| 3 | Source passage preview | `api.py`, `index.html` | Inline evidence verification, no extra API calls | ✓ DONE |
+| 4 | Section-to-section temporal diffs | `ask.py`, `evals/dataset.json` | 5+ new passing eval cases for "what changed" queries | not started |
+| 5 | Section filter in UI | `api.py`, `index.html` | 7 canonical sections filterable end-to-end | ✓ DONE |

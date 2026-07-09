@@ -332,12 +332,9 @@
     color: var(--muted);
     padding: 5px 0;
     border-top: 1px solid var(--line);
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
-    flex-wrap: wrap;
   }
   .source:first-of-type { border-top: none; }
+  .source-row { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
   .source-n { color: var(--accent); font-weight: 500; min-width: 20px; }
   .source-badge {
     display: inline-block;
@@ -351,6 +348,29 @@
   .source-link { color: var(--accent); text-decoration: none; font-size: 11px; opacity: .7; }
   .source-link:hover { opacity: 1; text-decoration: underline; }
   .source-scores { color: var(--line); font-size: 11px; white-space: nowrap; margin-left: auto; }
+  .source-toggle {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1px 6px;
+    cursor: pointer;
+  }
+  .source-toggle:hover { background: var(--accent-soft); }
+  .source-preview {
+    display: none;
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: var(--accent-soft);
+    border-radius: 4px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+  .source-preview.open { display: block; }
 
   /* status / error */
   .status { color: var(--muted); font-family: var(--font-mono); font-size: 13px; padding: 8px 2px; }
@@ -483,6 +503,26 @@
 
     <div class="control-group">
       <div class="control-header">
+        <span class="control-label">Section</span>
+        <div class="tip-wrap">
+          <button class="tip-btn" tabindex="-1">i</button>
+          <div class="tip-box">Restrict retrieval to one part of the filing. MD&amp;A and Risk Factors are the most commonly asked-about sections. Leave blank to search the whole document.</div>
+        </div>
+      </div>
+      <select id="sectionFilter">
+        <option value="">All sections</option>
+        <option value="mda">MD&amp;A</option>
+        <option value="risk_factors">Risk Factors</option>
+        <option value="results_of_operations">Results of Operations</option>
+        <option value="financial_statements">Financial Statements</option>
+        <option value="market_risk">Market Risk</option>
+        <option value="legal_proceedings">Legal Proceedings</option>
+        <option value="controls">Controls &amp; Procedures</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <div class="control-header">
         <span class="control-label">Diverse</span>
         <div class="tip-wrap">
           <button class="tip-btn" tabindex="-1">i</button>
@@ -521,12 +561,13 @@
 <p class="foot">Answers are grounded in the filing text and cite their sources. Verify anything important against the original SEC filing.</p>
 
 <script>
-  const API_URL    = (window.EDGAR_API_URL || "http://127.0.0.1:8000") + "/query";
+  const STREAM_URL = (window.EDGAR_API_URL || "http://127.0.0.1:8000") + "/query/stream";
   const input      = document.getElementById("question");
   const button     = document.getElementById("askBtn");
   const chat       = document.getElementById("chat");
   const tickerSel  = document.getElementById("tickerFilter");
   const formSel    = document.getElementById("formFilter");
+  const sectionSel = document.getElementById("sectionFilter");
   const diverseChk = document.getElementById("diverseToggle");
   const newQBtn    = document.getElementById("newQBtn");
   const suggestBox = document.getElementById("suggestions");
@@ -546,6 +587,7 @@
     conversationHistory = [];
     newQBtn.classList.remove("visible");
     input.value = "";
+    sectionSel.value = "";
     input.focus();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
@@ -650,18 +692,8 @@
     return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
-  function buildTurn(question, data) {
-    const body = withCitations(marked.parse(data.answer));
-
-    let filterNotice = "";
-    if (data.filter_applied) {
-      const f = data.filter_applied;
-      const label = f.ticker
-        || (f["$and"] ? f["$and"].map(x => Object.values(x)[0]).join(" + ") : JSON.stringify(f));
-      filterNotice = `<div class="filter-notice">auto-filtered to: <em>${label}</em></div>`;
-    }
-
-    const sourceItems = data.sources.map(s => {
+  function renderSourceItems(sources) {
+    return sources.map(s => {
       const badges = [
         s.ticker  && `<span class="source-badge">${s.ticker}</span>`,
         s.form    && `<span class="source-badge">${s.form}</span>`,
@@ -671,22 +703,44 @@
       const link = s.source_url
         ? `<a class="source-link" href="${s.source_url}" target="_blank" rel="noopener">↗ filing</a>`
         : "";
+      const toggle = s.text ? `<button class="source-toggle" type="button">passage</button>` : "";
+      const preview = s.text ? `<div class="source-preview">${escHtml(s.text)}</div>` : "";
       return `<div class="source">
-        <span class="source-n">[${s.n}]</span>
-        <span>${badges}${link}</span>
-        <span class="source-scores">sim ${s.similarity} · rank ${s.rerank_score}</span>
+        <div class="source-row">
+          <span class="source-n">[${s.n}]</span>
+          <span>${badges}${link}</span>
+          <span class="source-scores">sim ${s.similarity} · rank ${s.rerank_score}</span>
+          ${toggle}
+        </div>
+        ${preview}
       </div>`;
     }).join("");
+  }
 
+  // Event delegation: source cards are inserted via innerHTML, so listeners
+  // can't be attached at render time. One listener on the chat container
+  // handles every "passage" toggle button for every turn.
+  chat.addEventListener("click", (e) => {
+    const btn = e.target.closest(".source-toggle");
+    if (!btn) return;
+    const preview = btn.closest(".source").querySelector(".source-preview");
+    const open = preview.classList.toggle("open");
+    btn.textContent = open ? "hide" : "passage";
+  });
+
+  // Scaffold for a turn whose answer streams in token-by-token. The answer div
+  // exists (empty) from the start so tokens can be appended directly into it —
+  // no swap-in of a fully-formed turn once the response completes.
+  function buildStreamingTurn(question) {
     const turn = document.createElement("div");
     turn.className = "turn";
     turn.innerHTML = `
       <div class="turn-question"><span>Q</span>${escHtml(question)}</div>
-      ${filterNotice}
-      <div class="answer">${body}</div>
+      <div class="filter-notice-slot"></div>
+      <div class="answer"></div>
       <div class="sources">
         <div class="sources-label">Sources</div>
-        ${sourceItems}
+        <div class="sources-list"></div>
       </div>`;
     return turn;
   }
@@ -701,15 +755,6 @@
       <div class="turn-question"><span>Q</span>${escHtml(question)}</div>
       <div class="error">${explanation}<br>
         <code style="font-size:12px">${escHtml(msg)}</code></div>`;
-    return turn;
-  }
-
-  function buildLoadingTurn(question) {
-    const turn = document.createElement("div");
-    turn.className = "turn";
-    turn.innerHTML = `
-      <div class="turn-question"><span>Q</span>${escHtml(question)}</div>
-      <div class="status">Searching the corpus…</div>`;
     return turn;
   }
 
@@ -752,69 +797,158 @@
 
     button.disabled = true;
 
-    const loadingTurn = buildLoadingTurn(question);
-    const statusEl = loadingTurn.querySelector(".status");
-    chat.appendChild(loadingTurn);
-    loadingTurn.scrollIntoView({ behavior: "smooth", block: "end" });
+    const turn = buildStreamingTurn(question);
+    const answerEl     = turn.querySelector(".answer");
+    const sourcesListEl = turn.querySelector(".sources-list");
+    const filterSlot    = turn.querySelector(".filter-notice-slot");
+    answerEl.innerHTML = `<span class="status">Searching the corpus…</span>`;
+    chat.appendChild(turn);
+    turn.scrollIntoView({ behavior: "smooth", block: "end" });
 
     const payload = {
       question,
       ticker:  tickerSel.value  || "",
       form:    formSel.value    || "",
+      section: sectionSel.value || "",
       diverse: diverseChk.checked,
       // Send last 3 turns so the model and retrieval have enough context
       // without bloating the prompt with the full session.
       history: conversationHistory.slice(-3),
     };
 
-    // After 8s with no response, explain the cold-start situation.
-    const slowTimer = setTimeout(() => {
-      statusEl.innerHTML = `Searching the corpus…
-        <span class="wake-notice">The backend is waking up — Render's free tier spins down after ~15 min of inactivity. The first request after a break can take 30–60 s. Hang tight.</span>`;
-    }, 8000);
-
     const MAX_RETRIES = 3;
-    let lastErr = null;
-    let data = null;
+    let answerText   = "";
+    let gotFirstToken = false;
+    let finalMeta    = null;
+    let lastErr      = null;
 
-    // Retry loop: retries on network errors only (not HTTP errors like 429/503).
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      answerText = "";
+      gotFirstToken = false;
+      finalMeta = null;
+      lastErr = null;
+      let sawDone = false;
+
+      // Measured time-to-first-token on a fully warm backend is ~7s (embedding the
+      // question + Pinecone retrieval + Claude's time-to-first-token — none of which
+      // streaming speeds up; it only starts rendering sooner once tokens exist). A
+      // short threshold here fires on every normal request, not just real cold starts,
+      // so this stays at the same 8s the old blocking UI used rather than the shorter
+      // value once assumed here.
+      const slowTimer = setTimeout(() => {
+        if (!gotFirstToken) {
+          answerEl.innerHTML = `<span class="status">Searching the corpus…</span>
+            <span class="wake-notice">The backend is waking up — Render's free tier spins down after ~15 min of inactivity. The first request after a break can take 30–60 s. Hang tight.</span>`;
+        }
+      }, 8000);
+
       try {
-        const res = await fetch(API_URL, {
+        const res = await fetch(STREAM_URL, {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify(payload),
         });
-        if (!res.ok) {
+        if (!res.ok || !res.body) {
           const detail = await res.json().catch(() => ({}));
           const err = new Error(detail.detail || `Server returned ${res.status}`);
           err.isHttp = true;
           throw err;
         }
-        data = await res.json();
-        break;
+
+        const reader  = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          let idx;
+          while ((idx = buffer.indexOf("\n\n")) >= 0) {
+            const rawEvent = buffer.slice(0, idx).trim();
+            buffer = buffer.slice(idx + 2);
+            if (!rawEvent.startsWith("data:")) continue;
+            const dataStr = rawEvent.slice(5).trim();
+            if (dataStr === "[DONE]") { sawDone = true; continue; }
+
+            let evt;
+            try { evt = JSON.parse(dataStr); } catch { continue; }
+
+            if (typeof evt.error === "string") {
+              // A definitive, already-decided backend failure (bad prompt, model
+              // error, etc.), not a transient network drop — mark it the same way
+              // as an HTTP error so the retry loop below doesn't retry a failure
+              // that will just happen again identically.
+              const e = new Error(evt.error || "The server reported an error while answering.");
+              e.isHttp = true;
+              throw e;
+            } else if (typeof evt.token === "string") {
+              if (!gotFirstToken) {
+                gotFirstToken = true;
+                clearTimeout(slowTimer);
+                answerEl.textContent = "";
+              }
+              answerText += evt.token;
+              answerEl.textContent = answerText;
+            } else if (evt.sources) {
+              finalMeta = { sources: evt.sources, filter_applied: evt.filter_applied };
+            }
+          }
+        }
+        // The server always terminates the stream with `[DONE]` (see api.py's
+        // event_stream). If the connection closes without one ever arriving, the
+        // stream was cut short — treat it as a failure instead of silently
+        // rendering whatever partial text happened to arrive as if it were complete.
+        if (!sawDone) {
+          throw new Error("Connection closed before the response finished.");
+        }
+        clearTimeout(slowTimer);
+        break; // stream completed successfully
       } catch (err) {
+        clearTimeout(slowTimer);
         lastErr = err;
-        if (err.isHttp || attempt >= MAX_RETRIES) break;
-        // Network error — update status and retry after a short pause.
-        statusEl.innerHTML = `Reconnecting… (attempt ${attempt} of ${MAX_RETRIES})
+        // Only retry if nothing has streamed in yet — retrying mid-stream would
+        // duplicate an already-partially-rendered answer.
+        if (err.isHttp || gotFirstToken || attempt >= MAX_RETRIES) break;
+        answerEl.innerHTML = `<span class="status">Reconnecting… (attempt ${attempt} of ${MAX_RETRIES})</span>
           <span class="wake-notice">The backend may still be starting up. Retrying in 5 s.</span>`;
         await new Promise(r => setTimeout(r, 5000));
       }
     }
 
     try {
-      if (data) {
-        const realTurn = buildTurn(question, data);
-        chat.replaceChild(realTurn, loadingTurn);
-        // Store this turn in history so follow-ups have context
-        conversationHistory.push({ question, answer: data.answer });
+      if (lastErr && !gotFirstToken) {
+        const isNetworkError = !lastErr.isHttp;
+        chat.replaceChild(buildErrorTurn(question, lastErr.message, isNetworkError), turn);
       } else {
-        const isNetworkError = lastErr && !lastErr.isHttp;
-        chat.replaceChild(buildErrorTurn(question, lastErr.message, isNetworkError), loadingTurn);
+        // All tokens are in — parse markdown + citations once, rather than on every token.
+        answerEl.innerHTML = withCitations(marked.parse(answerText));
+
+        if (finalMeta && finalMeta.filter_applied) {
+          const f = finalMeta.filter_applied;
+          const label = f.ticker
+            || (f["$and"] ? f["$and"].map(x => Object.values(x)[0]).join(" + ") : JSON.stringify(f));
+          filterSlot.innerHTML = `<div class="filter-notice">auto-filtered to: <em>${label}</em></div>`;
+        }
+        sourcesListEl.innerHTML = renderSourceItems((finalMeta && finalMeta.sources) || []);
+
+        if (lastErr) {
+          // Connection dropped mid-stream, after some tokens had already arrived —
+          // keep the partial answer visible and surface the failure alongside it.
+          const note = document.createElement("div");
+          note.className = "error";
+          note.style.marginTop = "10px";
+          note.textContent = `Connection interrupted: ${lastErr.message}`;
+          turn.appendChild(note);
+        } else {
+          // Only record turns that completed cleanly — a truncated mid-stream
+          // answer would otherwise get fed back to the model as false context
+          // on the next follow-up question.
+          conversationHistory.push({ question, answer: answerText });
+        }
       }
     } finally {
-      clearTimeout(slowTimer);
       button.disabled = false;
       // Re-attach follow-up bar below the latest turn
       attachFollowupBar();

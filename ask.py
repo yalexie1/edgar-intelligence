@@ -19,12 +19,15 @@ Run:  python ask.py
 """
 
 import argparse
+import os
 import sys
 
+import cohere
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
 from embed_and_search import (
+    CANDIDATE_K,
     DIVERSE_CANDIDATE_MULTIPLIER,
     TOP_K,
     build_where,
@@ -312,65 +315,170 @@ Question: {question}
 Answer (period-by-period, then trend summary):"""
 
 
-def _ask_cross_company(collection, question, tickers, k, history, model=None):
+def _has_ticker_filter(where):
+    """True if `where` already pins a specific ticker (top-level or inside $and)."""
+    if not where:
+        return False
+    if "ticker" in where:
+        return True
+    return any("ticker" in f for f in where.get("$and", []))
+
+
+def _merge_where(where, extra):
+    """Combine an existing filter with an additional one, preserving both."""
+    if where is None:
+        return extra
+    if extra is None:
+        return where
+    if "$and" in where:
+        return {"$and": where["$and"] + [extra]}
+    return {"$and": [where, extra]}
+
+
+def _thin_evidence_abstain(results, message):
+    """Shared 'best evidence still too weak' check for all three _prepare_* paths.
+
+    `message` is a format string using `{best}`. Returns the abstain text, or
+    None if the best-scored result clears LOW_SIMILARITY_THRESHOLD.
+    """
+    best = max((r.get("rerank_score", r["similarity"]) for r in results), default=0)
+    if best < LOW_SIMILARITY_THRESHOLD:
+        return message.format(best=best)
+    return None
+
+
+_cohere_client = None
+
+
+def _get_cohere_client():
+    """Lazily construct the Cohere client. Returns None if no API key is set."""
+    global _cohere_client
+    if _cohere_client is None:
+        api_key = os.getenv("COHERE_API_KEY")
+        if not api_key:
+            return None
+        _cohere_client = cohere.ClientV2(api_key=api_key)
+    return _cohere_client
+
+
+def _rerank_with_cohere(results, question, k):
+    """Cross-encoder re-rank: read question + passage together for precision.
+
+    The local `rerank_score` (cosine + a lexical boost) can't tell a chunk that
+    *answers* the question from one that merely shares its vocabulary. Cohere's
+    rerank-v3.5 reads both together and re-orders for actual relevance.
+
+    Falls back to the original order (truncated to k) if COHERE_API_KEY is unset
+    or the API call fails — reranking is a precision upgrade, not a hard
+    dependency, and the free tier is capped at 1000 calls/month.
+    """
+    if not results:
+        return results
+    client = _get_cohere_client()
+    if client is None:
+        return results[:k]
+    try:
+        response = client.rerank(
+            model="rerank-v3.5",
+            query=question,
+            documents=[r["text"] for r in results],
+            top_n=min(k, len(results)),
+        )
+    except Exception:
+        return results[:k]
+    return [results[item.index] for item in response.results]
+
+
+def _prepare_cross_company(collection, question, tickers, k, history, extra_where=None):
+    """Retrieve evidence per named company and build the comparison prompt (or abstain).
+
+    `extra_where` is an additional metadata filter (e.g. {"section": "risk_factors"})
+    merged into each per-ticker filter — carries through a UI filter that was set
+    without an explicit ticker, so it survives structured cross-company retrieval.
+
+    Returns (prompt_or_none, abstain_text_or_none, results, effective_where, max_tokens).
+    effective_where is always None here — there is no single filter, each company has
+    its own. Shared by _ask_cross_company (blocking) and ask_stream (streaming).
+    """
+    max_tokens = 1400
+    k_per = max(CROSS_COMPANY_K_PER_TICKER, k)
+    company_results = {}
+    for ticker in tickers:
+        where = _merge_where({"ticker": ticker}, extra_where)
+        # Rerank per-ticker (not across the flattened pool) so a weaker company's
+        # best chunk can't be crowded out by a stronger company's — the coverage
+        # guarantee (every named ticker gets k_per chunks) has to hold post-rerank.
+        candidates = search(collection, question, where=where, k=CANDIDATE_K)
+        company_results[ticker] = _rerank_with_cohere(candidates, question, k_per)
+
+    flat = [r for rs in company_results.values() for r in rs]
+    if not flat:
+        return (
+            None,
+            "INSUFFICIENT_EVIDENCE\n\nNo evidence found for any of the specified companies.",
+            [],
+            None,
+            max_tokens,
+        )
+
+    abstain = _thin_evidence_abstain(
+        flat,
+        "INSUFFICIENT_EVIDENCE\n\nEvidence is too thin across all companies "
+        "(best rerank score: {best:.3f}).",
+    )
+    if abstain:
+        return None, abstain, flat, None, max_tokens
+
+    prompt = build_cross_company_prompt(question, company_results, history=history)
+    return prompt, None, flat, None, max_tokens
+
+
+def _ask_cross_company(collection, question, tickers, k, history, extra_where=None, model=None):
     """Structured retrieval: pull evidence per named company, then synthesize.
 
     Returns (answer_text, flat_results_list, None). effective_where is None
     because there is no single filter — each company has its own.
     """
-    k_per = max(CROSS_COMPANY_K_PER_TICKER, k)
-    company_results = {}
-    for ticker in tickers:
-        where = {"ticker": ticker}
-        results = search(collection, question, where=where, k=k_per)
-        company_results[ticker] = results
+    prompt, abstain, results, effective_where, max_tokens = _prepare_cross_company(
+        collection, question, tickers, k, history, extra_where=extra_where
+    )
+    if abstain is not None:
+        return abstain, results, effective_where
 
-    flat = [r for rs in company_results.values() for r in rs]
-    if not flat:
-        return (
-            "INSUFFICIENT_EVIDENCE\n\nNo evidence found for any of the specified companies.",
-            [],
-            None,
-        )
-
-    # Abstain if no company has even weak evidence.
-    best = max((r.get("rerank_score", r["similarity"]) for r in flat), default=0)
-    if best < LOW_SIMILARITY_THRESHOLD:
-        return (
-            f"INSUFFICIENT_EVIDENCE\n\nEvidence is too thin across all companies "
-            f"(best rerank score: {best:.3f}).",
-            flat,
-            None,
-        )
-
-    prompt = build_cross_company_prompt(question, company_results, history=history)
     client = Anthropic()
     msg = client.messages.create(
         model=model or ANSWER_MODEL,
-        max_tokens=1400,
+        max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
-    return msg.content[0].text, flat, None
+    return msg.content[0].text, results, effective_where
 
 
-def _ask_temporal(collection, question, ticker, k, history, model=None):
-    """Structured temporal retrieval: group evidence by period, sort chronologically.
+def _prepare_temporal(collection, question, ticker, k, history, extra_where=None):
+    """Structured temporal retrieval: group evidence by period (or abstain).
 
     Retrieves a large candidate pool for the ticker, then picks the top result
     from each distinct period so the prompt covers the full time range.
+    `extra_where` behaves as in _prepare_cross_company.
 
-    Returns (answer_text, results_list, effective_where).
+    Returns (prompt_or_none, abstain_text_or_none, results, effective_where, max_tokens).
+    Shared by _ask_temporal (blocking) and ask_stream (streaming).
     """
-    # Pull a big candidate pool so we span as many periods as possible.
+    max_tokens = 1200
+    # Pull a big candidate pool so we span as many periods as possible. No Cohere
+    # rerank here — period order must stay chronological, and reordering by
+    # relevance before the per-period grouping below would undermine that.
     raw_k = k * DIVERSE_CANDIDATE_MULTIPLIER * 2
-    where = {"ticker": ticker}
+    where = _merge_where({"ticker": ticker}, extra_where)
     candidates = search(collection, question, where=where, k=raw_k)
 
     if not candidates:
         return (
+            None,
             "INSUFFICIENT_EVIDENCE\n\nThe corpus returned no results for this ticker.",
             [],
             where,
+            max_tokens,
         )
 
     # Group by period, keep the best-scored chunk(s) per period.
@@ -390,41 +498,121 @@ def _ask_temporal(collection, question, ticker, k, history, model=None):
     # Hard cap at k * 2 so the prompt stays manageable.
     selected = selected[:k * 2]
 
-    best = max((r.get("rerank_score", r["similarity"]) for r in selected), default=0)
-    if best < LOW_SIMILARITY_THRESHOLD:
-        return (
-            f"INSUFFICIENT_EVIDENCE\n\nEvidence is too thin (best rerank score: {best:.3f}).",
-            selected,
-            where,
-        )
+    abstain = _thin_evidence_abstain(
+        selected, "INSUFFICIENT_EVIDENCE\n\nEvidence is too thin (best rerank score: {best:.3f})."
+    )
+    if abstain:
+        return None, abstain, selected, where, max_tokens
 
     prompt = build_temporal_prompt(question, selected, ticker, history=history)
+    return prompt, None, selected, where, max_tokens
+
+
+def _ask_temporal(collection, question, ticker, k, history, extra_where=None, model=None):
+    """Structured temporal retrieval: group evidence by period, sort chronologically.
+
+    Returns (answer_text, results_list, effective_where).
+    """
+    prompt, abstain, results, effective_where, max_tokens = _prepare_temporal(
+        collection, question, ticker, k, history, extra_where=extra_where
+    )
+    if abstain is not None:
+        return abstain, results, effective_where
+
     client = Anthropic()
     msg = client.messages.create(
         model=model or ANSWER_MODEL,
-        max_tokens=1200,
+        max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
-    return msg.content[0].text, selected, where
+    return msg.content[0].text, results, effective_where
 
 
-def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None):
-    """Retrieve evidence and produce a grounded, cited answer.
+def _prepare_plain(collection, question, where, k, diverse, history):
+    """Retrieval for the default (non-structured) path: retrieve, build the prompt,
+    or abstain.
 
-    Returns (answer_text, results_list, effective_where). Each result dict has:
-    id, similarity, lexical_score, rerank_score, text, metadata.
-
-    Routing (P2):
-      - Multiple named companies → _ask_cross_company: guaranteed evidence per ticker.
-      - Single named company + temporal signals → _ask_temporal: per-period grouping.
-      - "Which company" questions (no specific tickers) → expanded diverse pool.
-      - Everything else → original single-search path.
-
-    If no explicit `where` filter is given, the question is scanned for company
-    names. When the follow-up doesn't name a company, history is scanned so
-    retrieval stays focused on the right ticker.
+    Returns (prompt_or_none, abstain_text_or_none, results, effective_where, max_tokens).
+    Shared by _ask_plain (blocking) and ask_stream (streaming).
     """
-    if where is None:
+    max_tokens = 900
+    if diverse:
+        # Diverse mode fetches more candidates so diversify_results has variety to
+        # pick from; ticker spread is the goal there, not raw relevance, so it
+        # skips the Cohere pass — reranking pre-diversify would just let the
+        # cross-encoder's favorite ticker crowd out the others.
+        # "Which companies" questions use BROAD_DIVERSE_MULTIPLIER for more ticker coverage.
+        multiplier = BROAD_DIVERSE_MULTIPLIER if is_cross_company_question(question) else DIVERSE_CANDIDATE_MULTIPLIER
+        raw_k = k * multiplier
+        results = search(collection, question, where=where, k=raw_k)
+        results = diversify_results(results, k=k, by="ticker")
+    else:
+        # Two-stage retrieval: pull the full CANDIDATE_K pool from Pinecone (broad
+        # recall via cosine + lexical boost), then let Cohere's cross-encoder
+        # re-rank for precision before truncating to k.
+        candidates = search(collection, question, where=where, k=CANDIDATE_K)
+        results = _rerank_with_cohere(candidates, question, k)
+
+    if not results:
+        return (
+            None,
+            "INSUFFICIENT_EVIDENCE\n\nThe corpus returned no results for this question.",
+            [],
+            where,
+            max_tokens,
+        )
+
+    abstain = _thin_evidence_abstain(
+        results,
+        "INSUFFICIENT_EVIDENCE\n\nEvidence is too thin to answer confidently "
+        "(best rerank score: {best:.3f}). The corpus may not cover this question.",
+    )
+    if abstain:
+        return None, abstain, results, where, max_tokens
+
+    prompt = build_prompt(question, results, history=history)
+    return prompt, None, results, where, max_tokens
+
+
+def _ask_plain(collection, question, where, k, diverse, history, model=None):
+    """Default single-search path: retrieve, build the prompt, and answer.
+
+    Returns (answer_text, results_list, effective_where).
+    """
+    prompt, abstain, results, effective_where, max_tokens = _prepare_plain(
+        collection, question, where, k, diverse, history
+    )
+    if abstain is not None:
+        return abstain, results, effective_where
+
+    client = Anthropic()  # reads ANTHROPIC_API_KEY from the environment
+    msg = client.messages.create(
+        model=model or ANSWER_MODEL,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return msg.content[0].text, results, effective_where
+
+
+def _route(question, where, k, diverse, history):
+    """Decide which retrieval strategy a question needs.
+
+    Shared by ask() and ask_stream() so the two never drift out of sync. Ticker
+    detection runs unless `where` already pins a specific ticker — a section- or
+    form-only filter (e.g. from the UI's Section dropdown, with no ticker chosen)
+    still lets the question be scanned for company names, and any ticker found is
+    merged into the existing filter via `extra_where` rather than replacing it, so
+    the section/form constraint survives structured cross-company/temporal
+    retrieval too. When the follow-up doesn't name a company, history is scanned
+    so retrieval stays focused on the right ticker.
+
+    Returns a dict:
+      {"kind": "cross_company", "tickers": [...], "extra_where": dict|None}
+      {"kind": "temporal", "ticker": str, "extra_where": dict|None}
+      {"kind": "plain", "where": dict|None, "k": int, "diverse": bool}
+    """
+    if not _has_ticker_filter(where):
+        extra_where = where
         tickers = detect_tickers(question)
 
         # Fall back to the company named in prior turns when the follow-up
@@ -437,58 +625,100 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, 
 
         # P2: structured per-company retrieval for explicit multi-company questions.
         if len(tickers) > 1 and not diverse:
-            return _ask_cross_company(collection, question, tickers, k, history, model=model)
+            return {"kind": "cross_company", "tickers": tickers, "extra_where": extra_where}
 
         # P2: structured temporal retrieval for single-company trend questions.
         if len(tickers) == 1 and is_temporal_question(question) and not diverse:
-            return _ask_temporal(collection, question, tickers[0], k, history, model=model)
+            return {"kind": "temporal", "ticker": tickers[0], "extra_where": extra_where}
 
         if len(tickers) == 1:
-            where = {"ticker": tickers[0]}
+            where = _merge_where(where, {"ticker": tickers[0]})
         elif len(tickers) == 0 and not diverse and is_cross_company_question(question):
             # "Which companies" style: use a larger candidate pool so diversify_results
             # has a better chance of surfacing many distinct tickers.
             diverse = True
             k = max(k, TOP_K)
 
-    # Diverse mode fetches more candidates so diversify_results has variety to pick from.
-    # "Which companies" questions use BROAD_DIVERSE_MULTIPLIER for more ticker coverage.
-    if diverse:
-        multiplier = BROAD_DIVERSE_MULTIPLIER if is_cross_company_question(question) else DIVERSE_CANDIDATE_MULTIPLIER
-        raw_k = k * multiplier
+    return {"kind": "plain", "where": where, "k": k, "diverse": diverse}
+
+
+def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None):
+    """Retrieve evidence and produce a grounded, cited answer.
+
+    Returns (answer_text, results_list, effective_where). Each result dict has:
+    id, similarity, lexical_score, rerank_score, text, metadata.
+
+    Routing (P2), decided by _route():
+      - Multiple named companies → _ask_cross_company: guaranteed evidence per ticker.
+      - Single named company + temporal signals → _ask_temporal: per-period grouping.
+      - "Which company" questions (no specific tickers) → expanded diverse pool.
+      - Everything else → original single-search path (_ask_plain).
+
+    See ask_stream() for the token-streaming counterpart used by /query/stream.
+    """
+    route = _route(question, where, k, diverse, history)
+    if route["kind"] == "cross_company":
+        return _ask_cross_company(
+            collection, question, route["tickers"], k, history,
+            extra_where=route.get("extra_where"), model=model,
+        )
+    if route["kind"] == "temporal":
+        return _ask_temporal(
+            collection, question, route["ticker"], k, history,
+            extra_where=route.get("extra_where"), model=model,
+        )
+    return _ask_plain(collection, question, route["where"], route["k"], route["diverse"], history, model=model)
+
+
+def ask_stream(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None):
+    """Streaming counterpart to ask(): yields answer text as it arrives from the model.
+
+    Mirrors ask()'s routing (via the same _route() call) so retrieval and abstain
+    behavior are identical between the blocking and streaming paths. When the
+    question is answerable, tokens are yielded one at a time as they stream in
+    from the Anthropic API. When retrieval comes back empty or too weak, the
+    abstain message is yielded as a single chunk instead (there is nothing to
+    stream — no LLM call is made, matching ask()'s behavior).
+
+    The metadata sentinel is yielded FIRST, before any answer text — retrieval is
+    already complete by this point (it happens inside _prepare_*, before the model
+    is ever called), so there's no reason to hold sources back until generation
+    finishes. This also means a connection drop partway through generation still
+    leaves the citations intact for whatever partial answer text did arrive,
+    instead of silently losing them:
+        {"__meta__": True, "results": [...], "effective_where": ...}
+
+    Does not touch the LRU cache in api.py — streaming responses are not cached.
+    """
+    route = _route(question, where, k, diverse, history)
+
+    if route["kind"] == "cross_company":
+        prompt, abstain, results, effective_where, max_tokens = _prepare_cross_company(
+            collection, question, route["tickers"], k, history, extra_where=route.get("extra_where")
+        )
+    elif route["kind"] == "temporal":
+        prompt, abstain, results, effective_where, max_tokens = _prepare_temporal(
+            collection, question, route["ticker"], k, history, extra_where=route.get("extra_where")
+        )
     else:
-        raw_k = k
-    results = search(collection, question, where=where, k=raw_k)
-
-    if diverse:
-        results = diversify_results(results, k=k, by="ticker")
-
-    if not results:
-        return (
-            "INSUFFICIENT_EVIDENCE\n\nThe corpus returned no results for this question.",
-            [],
-            where,
+        prompt, abstain, results, effective_where, max_tokens = _prepare_plain(
+            collection, question, route["where"], route["k"], route["diverse"], history
         )
 
-    # If the best evidence is very weak, abstain rather than risk hallucination.
-    best_score = results[0].get("rerank_score", results[0]["similarity"])
-    if best_score < LOW_SIMILARITY_THRESHOLD:
-        return (
-            f"INSUFFICIENT_EVIDENCE\n\nEvidence is too thin to answer confidently "
-            f"(best rerank score: {best_score:.3f}). "
-            "The corpus may not cover this question.",
-            results,
-            where,
-        )
+    yield {"__meta__": True, "results": results, "effective_where": effective_where}
 
-    prompt = build_prompt(question, results, history=history)
-    client = Anthropic()  # reads ANTHROPIC_API_KEY from the environment
-    msg = client.messages.create(
+    if abstain is not None:
+        yield abstain
+        return
+
+    client = Anthropic()
+    with client.messages.stream(
         model=model or ANSWER_MODEL,
-        max_tokens=900,
+        max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
-    )
-    return msg.content[0].text, results, where
+    ) as stream:
+        for text in stream.text_stream:
+            yield text
 
 
 # Fixed set of themes relevant to SEC filings, each mapped to a natural-language
