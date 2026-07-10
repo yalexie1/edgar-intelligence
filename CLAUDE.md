@@ -283,6 +283,9 @@ clears it on "New question." Cache is bypassed when `history` is present.
 - Do not advertise a known-flaky feature (e.g. the section filter) without a caveat.
 - Treat CORS as polish, not a security control.
 - Keep code readable and commented; explain trade-offs. Minimal, focused changes.
+- After any major change or bugfix, add an entry to `DEVLOG.md` (date, commit, what/how/
+  notes) — it's the chronological history; this file (`CLAUDE.md`) stays a current-state
+  reference and gets edited in place, not appended to.
 
 ## Freeze rules
 
