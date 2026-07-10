@@ -15,7 +15,13 @@ import types
 import pytest
 
 from embed_and_search import build_where, canonical_section, diversify_results, TOP_K
-from ask import detect_tickers, _route
+from ask import (
+    detect_tickers,
+    _route,
+    is_section_diff_question,
+    detect_section,
+    build_diff_prompt,
+)
 from ingest import chunk_section, CHUNK_SIZE, MIN_CHUNK_CHARS
 
 
@@ -377,3 +383,199 @@ class TestRoute:
         where = {"$and": [{"ticker": "TSLA"}, {"section": "risk_factors"}]}
         route = _route("Compare Apple and Microsoft revenue", where, TOP_K, False, None)
         assert route == {"kind": "plain", "where": where, "k": TOP_K, "diverse": False}
+
+    # ── section-diff routing (v3 §4) ───────────────────────────────────────────
+
+    def test_single_company_diff_question_routes_section_diff(self):
+        route = _route(
+            "What changed in NVIDIA's risk factors between its two most recent 10-Ks?",
+            None, TOP_K, False, None,
+        )
+        assert route["kind"] == "section_diff"
+        assert route["ticker"] == "NVDA"
+        assert route["section"] == "risk_factors"
+
+    def test_diff_question_takes_precedence_over_temporal(self):
+        # "changed" alone would also satisfy is_temporal_question via other
+        # phrasing, but a diff-shaped question must route to section_diff, not
+        # temporal — section_diff is checked first in _route().
+        route = _route(
+            "What's changed in Apple's MD&A since last year?", None, TOP_K, False, None,
+        )
+        assert route["kind"] == "section_diff"
+        assert route["ticker"] == "AAPL"
+        assert route["section"] == "mda"
+
+    def test_diff_question_with_diverse_skips_section_diff(self):
+        route = _route(
+            "What changed in NVIDIA's risk factors since last year?", None, TOP_K, True, None,
+        )
+        assert route["kind"] == "plain"
+        assert route["diverse"] is True
+
+    def test_diff_question_with_explicit_ticker_where_skips_detection(self):
+        where = {"ticker": "TSLA"}
+        route = _route(
+            "What changed in NVIDIA's risk factors since last year?", where, TOP_K, False, None,
+        )
+        assert route == {"kind": "plain", "where": where, "k": TOP_K, "diverse": False}
+
+    def test_diff_question_multi_company_routes_cross_company_not_diff(self):
+        # Multi-company detection is checked before the diff check, so a diff
+        # phrase with 2+ named tickers still gets guaranteed per-ticker coverage.
+        route = _route(
+            "What changed in Apple and Microsoft's risk factors since last year?",
+            None, TOP_K, False, None,
+        )
+        assert route["kind"] == "cross_company"
+        assert set(route["tickers"]) == {"AAPL", "MSFT"}
+
+    def test_diff_question_defaults_section_when_no_hint(self):
+        route = _route(
+            "What changed for Tesla since last year?", None, TOP_K, False, None,
+        )
+        assert route["kind"] == "section_diff"
+        assert route["ticker"] == "TSLA"
+        assert route["section"] == "risk_factors"
+
+    def test_section_only_filter_still_routes_section_diff(self):
+        where = {"section": "mda"}
+        route = _route(
+            "What changed in NVIDIA's risk factors since last year?", where, TOP_K, False, None,
+        )
+        assert route["kind"] == "section_diff"
+        assert route["ticker"] == "NVDA"
+        assert route["extra_where"] == where
+
+    def test_section_filter_where_overrides_question_wording(self):
+        # An explicit section filter (e.g. the UI's Section dropdown) must win
+        # over whatever section the question's own wording implies — otherwise
+        # the retrieval filter (mda, from `where`) and the prompt's displayed
+        # section label (would-be risk_factors, from the question text) go out
+        # of sync, describing content that isn't what was actually retrieved.
+        where = {"section": "mda"}
+        route = _route(
+            "What changed in NVIDIA's risk factors since last year?", where, TOP_K, False, None,
+        )
+        assert route["section"] == "mda"
+
+
+# ── is_section_diff_question / detect_section ──────────────────────────────────
+
+class TestIsSectionDiffQuestion:
+    def test_what_changed(self):
+        assert is_section_diff_question(
+            "What changed in NVIDIA's risk factors between its two most recent 10-Ks?"
+        )
+
+    def test_whats_changed_contraction(self):
+        assert is_section_diff_question("What's changed in Apple's MD&A since last year?")
+
+    def test_since_last_year(self):
+        assert is_section_diff_question("What is new in Tesla's risk factors since last year?")
+
+    def test_compared_to_prior_year(self):
+        assert is_section_diff_question(
+            "How do Apple's risk factors compare to the prior year?"
+        )
+
+    def test_plain_temporal_question_not_diff(self):
+        assert not is_section_diff_question("How has NVIDIA's revenue trended over time?")
+
+    def test_plain_factual_question_not_diff(self):
+        assert not is_section_diff_question("What is Apple's revenue?")
+
+
+class TestDetectSection:
+    def test_risk_factors(self):
+        assert detect_section("What changed in NVIDIA's risk factors?") == "risk_factors"
+
+    def test_mda_abbreviation(self):
+        assert detect_section("What changed in Apple's MD&A?") == "mda"
+
+    def test_management_discussion_spelled_out(self):
+        assert detect_section(
+            "What changed in the management's discussion and analysis?"
+        ) == "mda"
+
+    def test_results_of_operations(self):
+        assert detect_section(
+            "What changed in the results of operations for MSFT?"
+        ) == "results_of_operations"
+
+    def test_financial_statements(self):
+        assert detect_section("What changed in the financial statements?") == "financial_statements"
+
+    def test_market_risk(self):
+        assert detect_section("What changed in the market risk disclosures?") == "market_risk"
+
+    def test_legal_proceedings(self):
+        assert detect_section("What changed in legal proceedings?") == "legal_proceedings"
+
+    def test_controls(self):
+        assert detect_section("What changed in internal controls?") == "controls"
+
+    def test_defaults_to_risk_factors(self):
+        assert detect_section("What changed for Tesla since last year?") == "risk_factors"
+
+
+# ── build_diff_prompt ───────────────────────────────────────────────────────────
+
+class TestBuildDiffPrompt:
+    def _period_chunks(self):
+        def r(text, period, section="risk_factors"):
+            return {
+                "similarity": 0.8,
+                "rerank_score": 0.8,
+                "text": text,
+                "metadata": {
+                    "ticker": "NVDA", "form": "10-K", "period": period,
+                    "section": section, "source_url": "https://example.com/nvda",
+                },
+            }
+        return {
+            "FY2024": [r("Old risk factor text.", "FY2024")],
+            "FY2025": [r("New risk factor text.", "FY2025")],
+        }
+
+    def test_includes_both_period_headers(self):
+        prompt = build_diff_prompt(
+            "What changed?", self._period_chunks(), "NVDA", "risk_factors"
+        )
+        assert "--- FY2024 ---" in prompt
+        assert "--- FY2025 ---" in prompt
+
+    def test_includes_passage_text(self):
+        prompt = build_diff_prompt(
+            "What changed?", self._period_chunks(), "NVDA", "risk_factors"
+        )
+        assert "Old risk factor text." in prompt
+        assert "New risk factor text." in prompt
+
+    def test_instructs_added_removed_unchanged_structure(self):
+        prompt = build_diff_prompt(
+            "What changed?", self._period_chunks(), "NVDA", "risk_factors"
+        )
+        assert "Added" in prompt or "added" in prompt
+        assert "Removed" in prompt or "removed" in prompt
+        assert "Unchanged" in prompt or "unchanged" in prompt
+
+    def test_includes_ticker_and_section(self):
+        prompt = build_diff_prompt(
+            "What changed?", self._period_chunks(), "NVDA", "risk_factors"
+        )
+        assert "NVDA" in prompt
+        assert "risk_factors" in prompt
+
+    def test_includes_abstain_instruction(self):
+        prompt = build_diff_prompt(
+            "What changed?", self._period_chunks(), "NVDA", "risk_factors"
+        )
+        assert "INSUFFICIENT_EVIDENCE" in prompt
+
+    def test_includes_history_when_provided(self):
+        history = [{"question": "What was NVDA's revenue?", "answer": "It was $X."}]
+        prompt = build_diff_prompt(
+            "What changed?", self._period_chunks(), "NVDA", "risk_factors", history=history
+        )
+        assert "What was NVDA's revenue?" in prompt

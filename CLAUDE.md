@@ -17,8 +17,9 @@ Update this file after any major change to the codebase.
 
 ## Current status (read this first)
 
-v2 is complete. P0, P1, P2, and P3 are all done. v3 steps 1, 2, 3, and 5 (streaming SSE,
-Cohere cross-encoder reranking, source passage preview, section filter in UI) are done.
+v2 is complete. P0, P1, P2, and P3 are all done. v3 is complete — all five steps
+(streaming SSE, Cohere cross-encoder reranking, source passage preview, section-to-section
+temporal diffs, section filter in UI) are done.
 
 - Scale: 13 companies, 8,141 chunks, 10-K / 10-Q / 8-K over ~2 years.
 - Frontend: single-page chat UI (`index.html`) with waking-up state and auto-retry on
@@ -35,12 +36,21 @@ Cohere cross-encoder reranking, source passage preview, section filter in UI) ar
 - Retrieval: two-stage — Pinecone ANN (cosine + lexical boost) pulls a 50-candidate pool,
   then Cohere `rerank-v3.5` re-ranks for precision before truncating to k (see v3 §2).
   Falls back to the local rerank order if `COHERE_API_KEY` is unset or the call fails.
-- Evals: 104-case golden set; last run 103/104 (99%), re-confirmed 2026-07-10 after adding
-  Cohere reranking (unchanged — same single pre-existing failure, no new regressions).
-  Cross-company: 22/22 (100%), temporal: 12/12 (100%), factual: 43/44, abstain: 26/26.
-  Retrieval hit-rate: 100%. RAGAS optional layer is wired up but blocked on Python 3.14 +
-  nest_asyncio (see Known limitations). Deterministic suite is primary.
-- Unit tests: 66/66 passing (`tests/test_pure.py`). No network or paid API calls.
+  "What changed" questions about a single company's section route to a dedicated
+  2-period diff path instead (see v3 §4) — no Cohere rerank there either, since period
+  grouping (not raw relevance) drives which chunks get selected.
+- Evals: 110-case golden set (104 + 6 new section-diff cases added with v3 §4); last run
+  107/110 (97%) on 2026-07-10. Cross-company: 22/22 (100%), temporal: 18/18 (100%,
+  includes all 6 new diff cases), factual: 41/44, abstain: 26/26. Retrieval hit-rate:
+  100%. The 3 factual-group misses are `avgo_gross_margin` (pre-existing, see Known
+  limitations) plus two borderline cases (`aapl_revenue_yoy`, `aapl_iphone_revenue_fy2025`)
+  that didn't fail in the prior 103/104 run — confirmed via direct `_route()` calls that
+  both still take the unchanged plain path (identical routing before/after v3 §4), so this
+  is retrieval/LLM answer variance on questions needing two specific filing periods in one
+  5-chunk pool, not a regression from the new routing. RAGAS optional layer is wired up
+  but blocked on Python 3.14 + nest_asyncio (see Known limitations). Deterministic suite
+  is primary.
+- Unit tests: 95/95 passing (`tests/test_pure.py`). No network or paid API calls.
 
 Pipeline file state:
 - `ingest.py` and `embed_and_search.py` are FROZEN. Any change requires a full
@@ -67,8 +77,10 @@ Pipeline file state:
   reranking, and diversity mode.
 - Answering (`ask.py`): retrieves evidence and asks Claude for a grounded, cited answer.
   Auto-detects company names (falls back to prior turns for follow-ups), uses structured
-  per-ticker retrieval for cross-company questions and structured per-period retrieval for
-  temporal questions, enforces the answer contract, abstains on weak evidence.
+  per-ticker retrieval for cross-company questions, structured per-period retrieval for
+  temporal questions, and a dedicated 2-period diff retrieval for "what changed in
+  section X" questions (see v3 §4), enforces the answer contract, abstains on weak
+  evidence.
 - Backend (`api.py`, FastAPI): `/query` (POST), `/themes` (GET, retrieval-only theme
   tracking), `/evals/results` (GET), `/evals/ragas` (GET), `/health` (GET).
   In-memory LRU cache (256 entries) for `(question, where, diverse)` tuples.
@@ -79,7 +91,7 @@ Pipeline file state:
 - Theme tracker (`themes.html`): standalone page. Fetches `GET /themes?ticker=`, renders
   a heat map of retrieval strength across 8 themes × filing periods. Includes a callout
   explaining what rerank_score means and what it does not (not frequency, not sentiment).
-- Eval harness (`evals/eval.py`, `evals/dataset.json`): 104-case golden set with per-case
+- Eval harness (`evals/eval.py`, `evals/dataset.json`): 110-case golden set with per-case
   scoring; writes `evals/last_results.json`, served by the API for the dashboard.
 - RAGAS eval (`evals/eval_ragas.py`, optional): LLM-judge layer on top of the golden set.
   Saves `evals/results/ragas_{results,summary}.json` and `ragas_results.csv`.
@@ -87,7 +99,7 @@ Pipeline file state:
 - Eval dashboard (`dashboard.html`): fetches `/evals/results` and `/evals/ragas`; renders
   metric cards, per-group bars, question-type breakdown, sortable case table, RAGAS section
   (shows placeholder when not yet run), and a link card to `themes.html`.
-- Unit tests (`tests/test_pure.py`): 66 cases, all passing. Pure functions only.
+- Unit tests (`tests/test_pure.py`): 95 cases, all passing. Pure functions only.
 
 ## The retrieval interface (what `ask.py` calls)
 
@@ -150,7 +162,7 @@ clears it on "New question." Cache is bypassed when `history` is present.
 - `index.html` — current. Chat frontend with waking-up state + nav links.
 - `dashboard.html` — current. Eval dashboard; links to `themes.html`.
 - `themes.html` — current. Standalone theme tracker with score explanation callout.
-- `tests/test_pure.py`, `tests/__init__.py` — unit tests (66 cases, no network calls).
+- `tests/test_pure.py`, `tests/__init__.py` — unit tests (95 cases, no network calls).
 - `evals/eval.py`, `evals/dataset.json`, `evals/last_results.json` — current.
 - `evals/eval_ragas.py` — current. Optional RAGAS LLM-judge layer (see Known limitations).
 - `evals/results/` — RAGAS output files written here when eval_ragas.py is run.
@@ -231,6 +243,17 @@ clears it on "New question." Cache is bypassed when `history` is present.
   set without a ticker (fixed 2026-07-09 — previously any explicit filter silently
   disabled structured retrieval), but the UI gives no feedback when a combination is thin
   beyond the normal abstain message.
+- Section diff (v3 §4): `is_section_diff_question()` is a fixed phrase list ("what
+  changed", "since last year", "compared to the prior year", etc.) — a differently-worded
+  "what changed" question can silently miss the list and fall through to the plain or
+  temporal path instead. `detect_section()` defaults to `"risk_factors"` when no section
+  is named, which may not be the section the user actually meant. `_prepare_section_diff`
+  only ever compares the 2 most recent distinct periods it finds in a `CANDIDATE_K`-sized
+  pool — for a low-coverage ticker/section combination (e.g. INTC), those 2 "periods"
+  could be adjacent quarters rather than year-over-year 10-Ks, and the prompt doesn't
+  currently surface which two periods it picked outside of the passage headers. There is
+  no UI entry point for this feature yet (no "diff mode" toggle) — it's reachable only by
+  phrasing a question the way `_DIFF_PHRASES` expects.
 
 ## Conventions and rules
 
@@ -433,7 +456,7 @@ cited passage to read the exact text the model referenced, without leaving the i
 the chunk, which can end mid-sentence. Acceptable for a "does this passage look
 plausible" check; not polished prose.
 
-## 4. Section-to-section temporal diffs
+## 4. Section-to-section temporal diffs ✓ DONE (2026-07-10)
 
 **The gap.** `_ask_temporal()` groups evidence by period for trend questions, but cannot
 compare the *same section* across two discrete periods. Financial analysts routinely read
@@ -444,23 +467,83 @@ last year?" — and this query type has no handler.
 detects 'what changed' queries, retrieves the same section from two reporting periods, and
 generates a structured before/after comparison."
 
-**Steps.**
-1. `ask.py` — add `_DIFF_PHRASES` list and `is_section_diff_question(question)`.
-2. `ask.py` — add `_SECTION_HINTS` dict and `detect_section(question)` (maps "risk factor"
-   → `"risk_factors"`, "md&a" → `"mda"`, etc.; defaults to `"risk_factors"`).
-3. `ask.py` — add `build_diff_prompt(question, period_chunks, ticker, section)`:
-   structures evidence as `--- {period} ---` blocks and instructs the model to list
-   (a) what was added/strengthened, (b) what was removed/softened, (c) what stayed the
-   same, with quotes and citations.
-4. `ask.py` — add `_ask_section_diff(collection, question, ticker, k, history, model=None)`:
-   filters by `{"$and": [{"ticker": ticker}, {"section": section_key}]}`, retrieves
-   `CANDIDATE_K` candidates, groups by `period`, takes top 2 chunks for the 2 most
-   recent distinct periods. Falls back to `_ask_temporal()` if fewer than 2 periods found.
-5. `ask.py` — route in `ask()` **before** the temporal check:
-   `if len(tickers) == 1 and is_section_diff_question(question) and not diverse`.
-6. `evals/dataset.json` — add 5+ cases (e.g. "What changed in NVIDIA's risk factors
-   between its two most recent 10-Ks?") with `"group": "temporal"` and
-   `"answer_contains": []` (retrieval-only; diff wording is non-deterministic).
+**What shipped.**
+- `ask.py` — `_DIFF_PHRASES` (a narrow, "what changed"-style phrase list — deliberately
+  distinct from `_TEMPORAL_PHRASES`'s broader trend phrasing) and
+  `is_section_diff_question(question)`.
+- `ask.py` — `_SECTION_HINTS` dict and `detect_section(question)` (maps "risk factor" →
+  `"risk_factors"`, "md&a" and "management's discussion" → `"mda"`, "results of
+  operations", "financial statement", "market risk", "legal proceeding", "controls and
+  procedures"/"internal controls" → their canonical labels; defaults to `"risk_factors"`
+  when no section is named — the section analysts diff most often).
+- `ask.py` — `build_diff_prompt(question, period_chunks, ticker, section, history=None)`:
+  structures evidence as `--- {period} ---` blocks (like `build_temporal_prompt`, but for
+  exactly the two periods being compared) and instructs the model to answer in three parts:
+  (a) added/strengthened, (b) removed/softened, (c) unchanged, with quotes and citations.
+- `ask.py` — `_prepare_section_diff(collection, question, ticker, section, k, history,
+  extra_where=None)` + blocking wrapper `_ask_section_diff(...)`: filters by ticker +
+  section (via a new `_extract_section_filter()` helper, so a UI-set section filter is
+  used as-is rather than double-filtered against the question's own detected section),
+  retrieves `CANDIDATE_K` candidates, groups by `period`, keeps the top 2 chunks from each
+  of the 2 most recent distinct periods. Falls back to `_prepare_temporal()`'s N-period
+  grouping if fewer than 2 periods are found — there's nothing to diff, but a trend answer
+  is still useful. No Cohere rerank here, matching `_prepare_temporal`'s reasoning:
+  period-based selection, not raw relevance, drives which chunks get kept.
+- `ask.py` — routed in `_route()` (shared by `ask()`/`ask_stream()`) **before** the
+  temporal check, so a diff-shaped question doesn't fall through to the broader temporal
+  path: `if len(tickers) == 1 and is_section_diff_question(question) and not diverse`.
+  Multi-company detection is still checked first, so a diff phrase with 2+ named tickers
+  correctly gets `_ask_cross_company()`'s guaranteed per-ticker coverage instead.
+- `evals/dataset.json` — added 6 cases (`diff_nvda_risk_factors`, `diff_aapl_mda`,
+  `diff_msft_risk_factors`, `diff_tsla_risk_factors`, `diff_googl_mda`,
+  `diff_msft_no_section_named`) covering each diff phrase variant and the
+  default-to-risk_factors path, with `"group": "temporal"` and `"answer_contains": []`
+  (retrieval-only; diff wording is non-deterministic). Corpus now 110 cases.
+- `tests/test_pure.py` — 28 new cases: `TestIsSectionDiffQuestion` (6),
+  `TestDetectSection` (9), `TestBuildDiffPrompt` (6), plus 7 new `TestRoute` cases covering
+  precedence (diff before temporal, multi-company still wins, diverse/explicit-ticker-where
+  bypass, section-only-filter merge). Full suite: 94/94 passing, all written test-first
+  (RED confirmed via `ImportError` before each function existed, then GREEN).
+
+**Verified live:** `POST /query` for "What changed in NVIDIA's risk factors between its
+two most recent 10-Ks?" correctly routed to `section_diff`, retrieved FY2025/FY2026
+risk-factors chunks, and returned a structured added/removed/unchanged answer with
+citations (e.g. correctly identified a new counterparty-risk factor and a new
+anti-takeover-provisions risk added in FY2026, not present in FY2025). `POST
+/query/stream` for an MD&A diff question streamed the `__meta__` sources event first (both
+periods present) exactly as the streaming contract from v3 §1 specifies.
+
+`python evals/eval.py` re-run after shipping (110 cases): 107/110 (97%). All 6 new
+diff cases pass (temporal group: 18/18, 100%). The 3 misses are `avgo_gross_margin`
+(pre-existing, see Known limitations) plus two factual-group cases
+(`aapl_revenue_yoy`, `aapl_iphone_revenue_fy2025`) that passed in the prior 103/104
+run — confirmed via direct `_route()` calls that both still take the identical
+unchanged plain path before and after this change, so the miss is retrieval/LLM answer
+variance on a question needing two specific filing periods inside one 5-chunk pool, not
+a regression introduced by the new routing.
+
+**Not measured:** like v3 §2's reranking claim, the diff quality itself (does the
+added/removed/unchanged breakdown actually reflect what changed, beyond citing real
+passages) isn't scored by the eval harness — `answer_contains: []` makes these cases
+retrieval-only. The one live example above looked accurate on manual inspection, but
+that's a single spot-check, not a measured precision claim.
+
+**Bug found via pre-commit code review, fixed same day:** the first version of `_route()`
+picked the diff prompt's `section` purely from `detect_section(question)` — the
+question's own wording — even when an explicit section filter was already pinned via
+`extra_where` (the UI's Section dropdown). `_prepare_section_diff` correctly prioritized
+the UI filter for *retrieval* (skipping the redundant merge when one was already present),
+but the *prompt* was still labeled with the question-derived section regardless. Caught
+by manually constructing the conflicting case — a `{"section": "mda"}` UI filter combined
+with a question saying "risk factors" — and confirming via a direct `_route()` call that
+it returned `section: "risk_factors"` while `extra_where` said `"mda"`: retrieval would
+correctly fetch MD&A chunks, but the prompt would tell the model (and by extension the
+user) it was comparing "risk_factors." Fixed by adding `_extract_section_filter(where)`
+and using `_extract_section_filter(extra_where) or detect_section(question)` in `_route()`,
+so an explicit filter always wins — the same precedence pattern already established for
+tickers via `_has_ticker_filter()`. Added `TestRoute.test_section_filter_where_overrides_question_wording`
+(written first, watched fail with the old `"risk_factors"` value, then fixed). Full suite:
+95/95 passing.
 
 ## 5. Section filter in UI (full-stack filter completion) ✓ DONE (2026-07-09)
 
@@ -512,5 +595,5 @@ path). See the Known Limitations entry on the section filter for the residual ca
 | 1 | Streaming SSE | `ask.py`, `api.py`, `index.html` | Time-to-first-token: full round trip → tokens render as generated (~7 s TTFT, retrieval-bound — see §1) | ✓ DONE |
 | 2 | Cohere cross-encoder reranking | `ask.py`, `requirements.txt`, `.env.example`, `render.yaml` | Pinecone top-50 recall → Cohere top-k precision; no eval regression (103/104, see v3 §2 caveat on precision measurement) | ✓ DONE |
 | 3 | Source passage preview | `api.py`, `index.html` | Inline evidence verification, no extra API calls | ✓ DONE |
-| 4 | Section-to-section temporal diffs | `ask.py`, `evals/dataset.json` | 5+ new passing eval cases for "what changed" queries | not started |
+| 4 | Section-to-section temporal diffs | `ask.py`, `evals/dataset.json` | 6 new passing eval cases for "what changed" queries (temporal group: 18/18) | ✓ DONE |
 | 5 | Section filter in UI | `api.py`, `index.html` | 7 canonical sections filterable end-to-end | ✓ DONE |

@@ -133,6 +133,60 @@ def is_temporal_question(question):
     return any(phrase in q for phrase in _TEMPORAL_PHRASES)
 
 
+# Phrases that signal a "what changed" comparison between two specific filing
+# periods, as opposed to a general multi-period trend (_TEMPORAL_PHRASES). Kept
+# narrow and checked before the temporal check in _route() — a phrase like
+# "changed between" alone (already in _TEMPORAL_PHRASES) is deliberately NOT
+# included here, since it also matches ordinary trend questions.
+_DIFF_PHRASES = [
+    "what changed", "what's changed", "what has changed",
+    "since last year", "since the prior year", "since its last",
+    "compared to last year", "compared to the prior year",
+    "compare to last year", "compare to the prior year",
+    "vs last year", "versus last year",
+    "newly added", "no longer mentions", "new risk factor",
+]
+
+# Maps a phrase that names a section to its canonical section label (see
+# canonical_section() in embed_and_search.py for the full label set). Longer,
+# more specific hints should be listed before shorter ones only where one is a
+# substring of another; none currently overlap.
+_SECTION_HINTS = {
+    "md&a": "mda",
+    "management's discussion": "mda",
+    "managements discussion": "mda",
+    "management discussion": "mda",
+    "results of operations": "results_of_operations",
+    "financial statement": "financial_statements",
+    "market risk": "market_risk",
+    "legal proceeding": "legal_proceedings",
+    "controls and procedures": "controls",
+    "internal controls": "controls",
+    "risk factor": "risk_factors",
+}
+
+
+def is_section_diff_question(question):
+    """Return True if the question asks what changed in a section between periods."""
+    q = question.lower()
+    return any(phrase in q for phrase in _DIFF_PHRASES)
+
+
+def detect_section(question):
+    """Map a question to the canonical section it's asking about.
+
+    Defaults to "risk_factors" when no section is named — it's the section
+    analysts diff most often ("what changed in the risk factors") and the
+    section-diff feature needs some section to filter on even when the user
+    doesn't name one explicitly.
+    """
+    q = question.lower()
+    for hint, section in _SECTION_HINTS.items():
+        if hint in q:
+            return section
+    return "risk_factors"
+
+
 def get_collection():
     """Connect to the Pinecone index."""
     try:
@@ -315,6 +369,69 @@ Question: {question}
 Answer (period-by-period, then trend summary):"""
 
 
+def build_diff_prompt(question, period_chunks, ticker, section, history=None):
+    """Build a prompt comparing the same section across two consecutive filing periods.
+
+    period_chunks is a dict {period: [result, ...]} containing exactly the two
+    periods to compare, in chronological order (oldest first) — the dict's own
+    iteration order drives the passage layout below, so callers must insert in
+    that order.
+    """
+    history_section = ""
+    if history:
+        turns = []
+        for h in history:
+            prior = h["answer"][:500] + ("…" if len(h["answer"]) > 500 else "")
+            turns.append(f"User: {h['question']}\nAssistant: {prior}")
+        history_section = (
+            "Prior conversation (for context only):\n"
+            + "\n\n".join(turns)
+            + "\n\n"
+        )
+
+    passage_num = 1
+    sections = []
+    for period, results in period_chunks.items():
+        header = f"--- {period or 'Unknown period'} ---"
+        passages = []
+        for r in results:
+            meta = r["metadata"]
+            source_line = fmt_source(meta)
+            url = meta.get("source_url", "")
+            h = f"[{passage_num}] Source: {source_line}"
+            if url:
+                h += f"\n    URL: {url}"
+            passages.append(f"{h}\n{r['text']}")
+            passage_num += 1
+        sections.append(header + "\n" + "\n\n".join(passages))
+
+    context = "\n\n".join(sections)
+
+    return f"""You are a financial analyst comparing {ticker}'s "{section}" section across two consecutive SEC filing periods. Answer ONLY from the numbered passages below.
+
+Answer contract — follow every rule:
+1. Ground every claim in the passages. Do not add facts from outside them.
+2. After each claim, cite the passage number(s) in square brackets.
+3. Structure your answer in three parts:
+   a. Added or strengthened — new language, new risks, or emphasis that appears
+      in the later period but not the earlier one.
+   b. Removed or softened — language present in the earlier period that is
+      absent or weakened in the later one.
+   c. Unchanged — language or disclosures that remain materially the same
+      across both periods.
+4. For each point, include a short supporting quote and cite the passage.
+5. If the two periods' passages are too thin or too similar to compare
+   confidently, start your entire response with INSUFFICIENT_EVIDENCE on its
+   own line, then explain.
+
+{history_section}Passages by filing period (chronological, earliest first):
+{context}
+
+Question: {question}
+
+Answer (added/strengthened, then removed/softened, then unchanged):"""
+
+
 def _has_ticker_filter(where):
     """True if `where` already pins a specific ticker (top-level or inside $and)."""
     if not where:
@@ -322,6 +439,24 @@ def _has_ticker_filter(where):
     if "ticker" in where:
         return True
     return any("ticker" in f for f in where.get("$and", []))
+
+
+def _extract_section_filter(where):
+    """Return the section value already pinned in `where` (top-level or inside
+    $and), or None if `where` doesn't pin one.
+
+    Used so an explicit section filter (e.g. the UI's Section dropdown) always
+    wins over whatever section a diff question's own wording implies — keeping
+    the retrieval filter and the prompt's displayed section label in sync.
+    """
+    if not where:
+        return None
+    if "section" in where:
+        return where["section"]
+    for f in where.get("$and", []):
+        if "section" in f:
+            return f["section"]
+    return None
 
 
 def _merge_where(where, extra):
@@ -528,6 +663,81 @@ def _ask_temporal(collection, question, ticker, k, history, extra_where=None, mo
     return msg.content[0].text, results, effective_where
 
 
+def _prepare_section_diff(collection, question, ticker, section, k, history, extra_where=None):
+    """Structured section-diff retrieval: same section, two most recent periods.
+
+    Filters to the ticker and (unless the caller's own filter already pins a
+    section — e.g. the UI's Section dropdown) the detected section, retrieves
+    a large candidate pool, groups by period, and keeps the top 2 chunks from
+    each of the 2 most recent distinct periods. Falls back to _prepare_temporal
+    (N-period grouping) if fewer than 2 periods are found — there's nothing to
+    diff, but a trend answer over however many periods exist is still useful.
+
+    Returns (prompt_or_none, abstain_text_or_none, results, effective_where, max_tokens).
+    Shared by _ask_section_diff (blocking) and ask_stream (streaming).
+    """
+    max_tokens = 1200
+    where = _merge_where({"ticker": ticker}, extra_where)
+    if _extract_section_filter(where) is None:
+        where = _merge_where(where, {"section": section})
+
+    candidates = search(collection, question, where=where, k=CANDIDATE_K)
+
+    if not candidates:
+        return (
+            None,
+            "INSUFFICIENT_EVIDENCE\n\nThe corpus returned no results for this "
+            "ticker and section.",
+            [],
+            where,
+            max_tokens,
+        )
+
+    period_buckets: dict = {}
+    for r in candidates:
+        period = r["metadata"].get("period") or r["metadata"].get("filing_date", "")
+        period_buckets.setdefault(period, []).append(r)
+
+    periods_sorted = sorted(period_buckets.keys())
+    if len(periods_sorted) < 2:
+        # Nothing to diff — fall back to the temporal path's N-period grouping.
+        return _prepare_temporal(collection, question, ticker, k, history, extra_where=extra_where)
+
+    two_most_recent = periods_sorted[-2:]
+    period_chunks = {p: period_buckets[p][:2] for p in two_most_recent}
+    selected = [r for p in two_most_recent for r in period_chunks[p]]
+
+    abstain = _thin_evidence_abstain(
+        selected, "INSUFFICIENT_EVIDENCE\n\nEvidence is too thin to compare periods "
+        "(best rerank score: {best:.3f})."
+    )
+    if abstain:
+        return None, abstain, selected, where, max_tokens
+
+    prompt = build_diff_prompt(question, period_chunks, ticker, section, history=history)
+    return prompt, None, selected, where, max_tokens
+
+
+def _ask_section_diff(collection, question, ticker, section, k, history, extra_where=None, model=None):
+    """Structured section-diff retrieval: same section across two consecutive periods.
+
+    Returns (answer_text, results_list, effective_where).
+    """
+    prompt, abstain, results, effective_where, max_tokens = _prepare_section_diff(
+        collection, question, ticker, section, k, history, extra_where=extra_where
+    )
+    if abstain is not None:
+        return abstain, results, effective_where
+
+    client = Anthropic()
+    msg = client.messages.create(
+        model=model or ANSWER_MODEL,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return msg.content[0].text, results, effective_where
+
+
 def _prepare_plain(collection, question, where, k, diverse, history):
     """Retrieval for the default (non-structured) path: retrieve, build the prompt,
     or abstain.
@@ -608,6 +818,7 @@ def _route(question, where, k, diverse, history):
 
     Returns a dict:
       {"kind": "cross_company", "tickers": [...], "extra_where": dict|None}
+      {"kind": "section_diff", "ticker": str, "section": str, "extra_where": dict|None}
       {"kind": "temporal", "ticker": str, "extra_where": dict|None}
       {"kind": "plain", "where": dict|None, "k": int, "diverse": bool}
     """
@@ -626,6 +837,18 @@ def _route(question, where, k, diverse, history):
         # P2: structured per-company retrieval for explicit multi-company questions.
         if len(tickers) > 1 and not diverse:
             return {"kind": "cross_company", "tickers": tickers, "extra_where": extra_where}
+
+        # v3 §4: "what changed" questions about a single company's section,
+        # checked before the (broader) temporal check — a diff question is a
+        # special case of a trend question and needs the 2-period grouping in
+        # _prepare_section_diff rather than _prepare_temporal's N-period one.
+        if len(tickers) == 1 and is_section_diff_question(question) and not diverse:
+            return {
+                "kind": "section_diff",
+                "ticker": tickers[0],
+                "section": _extract_section_filter(extra_where) or detect_section(question),
+                "extra_where": extra_where,
+            }
 
         # P2: structured temporal retrieval for single-company trend questions.
         if len(tickers) == 1 and is_temporal_question(question) and not diverse:
@@ -648,8 +871,10 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, 
     Returns (answer_text, results_list, effective_where). Each result dict has:
     id, similarity, lexical_score, rerank_score, text, metadata.
 
-    Routing (P2), decided by _route():
+    Routing (P2/v3 §4), decided by _route():
       - Multiple named companies → _ask_cross_company: guaranteed evidence per ticker.
+      - Single named company + "what changed" signals → _ask_section_diff: same
+        section, two most recent periods, before/after comparison.
       - Single named company + temporal signals → _ask_temporal: per-period grouping.
       - "Which company" questions (no specific tickers) → expanded diverse pool.
       - Everything else → original single-search path (_ask_plain).
@@ -660,6 +885,11 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, 
     if route["kind"] == "cross_company":
         return _ask_cross_company(
             collection, question, route["tickers"], k, history,
+            extra_where=route.get("extra_where"), model=model,
+        )
+    if route["kind"] == "section_diff":
+        return _ask_section_diff(
+            collection, question, route["ticker"], route["section"], k, history,
             extra_where=route.get("extra_where"), model=model,
         )
     if route["kind"] == "temporal":
@@ -695,6 +925,11 @@ def ask_stream(collection, question, where=None, k=TOP_K, diverse=False, history
     if route["kind"] == "cross_company":
         prompt, abstain, results, effective_where, max_tokens = _prepare_cross_company(
             collection, question, route["tickers"], k, history, extra_where=route.get("extra_where")
+        )
+    elif route["kind"] == "section_diff":
+        prompt, abstain, results, effective_where, max_tokens = _prepare_section_diff(
+            collection, question, route["ticker"], route["section"], k, history,
+            extra_where=route.get("extra_where"),
         )
     elif route["kind"] == "temporal":
         prompt, abstain, results, effective_where, max_tokens = _prepare_temporal(

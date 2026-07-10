@@ -881,5 +881,59 @@
     "min_unique_periods": 2,
     "answer_contains": [],
     "notes": "P2 temporal structured: Meta discloses capex in 10-Q MDA sections across multiple quarters"
+  },
+  {
+    "id": "diff_nvda_risk_factors",
+    "group": "temporal",
+    "question": "What changed in NVIDIA's risk factors between its two most recent 10-Ks?",
+    "expected_tickers": ["NVDA"],
+    "min_unique_periods": 2,
+    "answer_contains": [],
+    "notes": "v3 §4 section diff: tests _ask_section_diff routing + risk_factors section detection"
+  },
+  {
+    "id": "diff_aapl_mda",
+    "group": "temporal",
+    "question": "What's changed in Apple's MD&A since last year?",
+    "expected_tickers": ["AAPL"],
+    "min_unique_periods": 2,
+    "answer_contains": [],
+    "notes": "v3 §4 section diff: tests MD&A section-hint detection ('md&a' -> mda)"
+  },
+  {
+    "id": "diff_msft_risk_factors",
+    "group": "temporal",
+    "question": "What changed in Microsoft's risk factors compared to the prior year?",
+    "expected_tickers": ["MSFT"],
+    "min_unique_periods": 2,
+    "answer_contains": [],
+    "notes": "v3 §4 section diff: tests 'compared to the prior year' diff phrasing"
+  },
+  {
+    "id": "diff_tsla_risk_factors",
+    "group": "temporal",
+    "question": "What changed in Tesla's risk factors since last year?",
+    "expected_tickers": ["TSLA"],
+    "min_unique_periods": 2,
+    "answer_contains": [],
+    "notes": "v3 §4 section diff: tests 'since last year' diff phrasing"
+  },
+  {
+    "id": "diff_googl_mda",
+    "group": "temporal",
+    "question": "What changed in Google's management's discussion and analysis since last year?",
+    "expected_tickers": ["GOOGL"],
+    "min_unique_periods": 2,
+    "answer_contains": [],
+    "notes": "v3 §4 section diff: tests spelled-out MD&A section hint ('management's discussion' -> mda)"
+  },
+  {
+    "id": "diff_msft_no_section_named",
+    "group": "temporal",
+    "question": "What changed for Microsoft since last year?",
+    "expected_tickers": ["MSFT"],
+    "min_unique_periods": 2,
+    "answer_contains": [],
+    "notes": "v3 §4 section diff: no section named, tests default-to-risk_factors behavior in detect_section"
   }
 ]
