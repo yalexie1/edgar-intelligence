@@ -1,4 +1,4 @@
-# EDGAR Intelligence (v2)
+# EDGAR Intelligence (v3)
 
 Ask plain-English questions about SEC filings from 13 large public companies and get grounded, cited answers — built with retrieval-augmented generation (RAG).
 
@@ -9,11 +9,15 @@ NOTE: The backend is hosted on Render and spins down every 15 minutes when there
 ## What it does
 
 - Searches 8,141 embedded chunks from 10-K, 10-Q, and 8-K filings across AAPL, MSFT, GOOGL, AMZN, META, NVDA, AVGO, TSLA, ORCL, CRM, AMD, NFLX, and INTC
-- Every answer cites the exact passage, filing form, period, section, and a link to the original SEC document
+- Answers stream token-by-token via Server-Sent Events instead of waiting for the full response
+- Every answer cites the exact passage, filing form, period, section, and a link to the original SEC document — each citation expands inline to show the actual cited text
+- Filter by company, form type, and section (MD&A, Risk Factors, Financial Statements, and 4 others)
 - Follow-up questions carry conversation context — ask "what was Apple's revenue?" then "how did management explain the growth?" and it stays focused
 - Auto-detects company names in questions and applies the right metadata filter automatically
 - Cross-company questions ("compare AAPL and MSFT cloud margins") retrieve evidence per-ticker separately so every named company is guaranteed representation
 - Trend questions ("how has NVDA's gross margin changed?") retrieve across multiple filing periods and present results chronologically
+- "What changed" questions ("what changed in NVIDIA's risk factors since last year?") retrieve the same section from two consecutive filing periods and generate a structured added/removed/unchanged comparison
+- A Cohere cross-encoder reranks the top-50 retrieved candidates for precision before an answer is generated (falls back to local cosine+lexical ranking if unset)
 - Abstains honestly when the corpus doesn't cover the question
 
 ## Architecture
@@ -28,9 +32,9 @@ ask.py  ←→  api.py  (FastAPI, Render)  ←→  index.html     (chat UI)
 ```
 
 - **Embeddings**: OpenAI `text-embedding-3-small` (1536-dim)
-- **Answers**: Anthropic Claude (`claude-sonnet-4-6` on Render; `claude-haiku-4-5-20251001` as dev default)
+- **Answers**: Anthropic Claude (`claude-sonnet-4-6` on Render; `claude-haiku-4-5-20251001` as dev default), streamed via SSE
 - **Vector store**: Pinecone serverless (AWS us-east-1, cosine, free tier)
-- **Retrieval**: semantic search + query expansion + lexical reranking + structured per-entity retrieval for cross-company and temporal questions
+- **Retrieval**: Pinecone ANN (top-50 recall) → Cohere `rerank-v3.5` cross-encoder (precision) → structured per-entity retrieval for cross-company, temporal, and section-diff questions
 
 ## Setup
 
@@ -56,7 +60,10 @@ Fill in your keys:
 OPENAI_API_KEY=your_openai_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
 PINECONE_API_KEY=your_pinecone_api_key
+COHERE_API_KEY=your_cohere_api_key
 ```
+
+`COHERE_API_KEY` is optional (free tier: 1000 calls/month) — cross-encoder reranking is skipped and falls back to local cosine+lexical ranking if unset.
 
 The vector index lives in Pinecone (cloud). The processed corpus is included at `data/corpus.jsonl`. To upload vectors to your own Pinecone index (creates the `sec-filings` index on first run):
 
@@ -100,9 +107,11 @@ python -m http.server 5500
 
 The API exposes:
 - `POST /query` — answer a question with cited sources (rate-limited: 10/min, 200/day per IP)
+- `POST /query/stream` — same answer, streamed token-by-token as Server-Sent Events
 - `GET /themes?ticker=NVDA` — retrieval-only theme heat map (no LLM cost)
 - `GET /health` — liveness check
 - `GET /evals/results` — last eval run (used by the dashboard)
+- `GET /evals/ragas` — last RAGAS run, if any (used by the dashboard)
 - `GET /docs` — interactive API docs (FastAPI auto-generated)
 
 ## Eval harness
@@ -111,12 +120,12 @@ Two complementary evaluation layers. The deterministic suite is the primary regr
 
 ### Layer 1 — Deterministic suite (primary)
 
-A 104-case golden dataset (`evals/dataset.json`) covers four question types:
+A 110-case golden dataset (`evals/dataset.json`) covers four question types:
 
 | Group | Cases | What it tests |
 |---|---|---|
 | factual | 44 | Single-lookup facts (revenue figures, product descriptions) |
-| temporal | 12 | Multi-period synthesis (trend questions, min 2–3 unique periods) |
+| temporal | 18 | Multi-period synthesis (trend questions, min 2–3 unique periods) — includes 6 section-diff ("what changed") cases |
 | cross_company | 22 | Per-company structured retrieval (2- and 3-company comparisons) |
 | abstain | 26 | Out-of-corpus questions (should refuse to answer) |
 
@@ -126,9 +135,9 @@ Run the full suite (requires the API to be running):
 python evals/eval.py
 ```
 
-**Answer faithfulness** is scored only on cases with expected strings in `answer_contains` (12 cases). Cases without expected strings are retrieval-only checks and excluded from the faithfulness denominator.
+**Answer faithfulness** is scored only on cases with expected strings in `answer_contains` (12 cases). Cases without expected strings — including all 6 section-diff cases, since diff wording is non-deterministic — are retrieval-only checks and excluded from the faithfulness denominator.
 
-Last result: **103/104 (99%)** — retrieval 100%, abstain precision 100%, cross-company 100%, temporal 100%.  
+Last result: **107/110 (97%)** — retrieval 100%, abstain precision 100%, cross-company 100%, temporal 100% (18/18). The 3 misses are known retrieval-precision gaps (see `CLAUDE.md`'s Known Limitations), not routing bugs.  
 Results are saved to `evals/last_results.json` and visible at `dashboard.html`.
 
 ### Layer 2 — RAGAS (complementary, optional)
@@ -158,10 +167,10 @@ Pure-function tests — no network or paid API calls:
 
 ```bash
 python -m pytest tests/
-# 51 passed
+# 98 passed
 ```
 
-Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`, `chunk_section`.
+Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`, `chunk_section`, and `_route` (the retrieval-strategy router shared by the blocking and streaming answer paths, including cross-company, temporal, and section-diff routing).
 
 ## Theme tracker
 
@@ -173,3 +182,4 @@ Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`
 - Every SEC EDGAR request sends a `User-Agent` header (name + email, required by SEC policy).
 - `ingest.py` is frozen — do not modify unless you intend to rebuild the full corpus from scratch.
 - The public endpoint has per-IP rate limiting (10 req/min, 200 req/day) and a global daily cap (2000 req/day).
+- The "what changed" section-diff feature has no dedicated UI toggle yet — it's reachable by phrasing a question the way the router expects (e.g. "what changed in NVIDIA's risk factors since last year?"). See `CLAUDE.md`'s Known Limitations for the full list of known gaps.
