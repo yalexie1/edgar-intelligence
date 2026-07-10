@@ -50,7 +50,7 @@ temporal diffs, section filter in UI) are done.
   5-chunk pool, not a regression from the new routing. RAGAS optional layer is wired up
   but blocked on Python 3.14 + nest_asyncio (see Known limitations). Deterministic suite
   is primary.
-- Unit tests: 95/95 passing (`tests/test_pure.py`). No network or paid API calls.
+- Unit tests: 98/98 passing (`tests/test_pure.py`). No network or paid API calls.
 
 Pipeline file state:
 - `ingest.py` and `embed_and_search.py` are FROZEN. Any change requires a full
@@ -99,7 +99,7 @@ Pipeline file state:
 - Eval dashboard (`dashboard.html`): fetches `/evals/results` and `/evals/ragas`; renders
   metric cards, per-group bars, question-type breakdown, sortable case table, RAGAS section
   (shows placeholder when not yet run), and a link card to `themes.html`.
-- Unit tests (`tests/test_pure.py`): 95 cases, all passing. Pure functions only.
+- Unit tests (`tests/test_pure.py`): 98 cases, all passing. Pure functions only.
 
 ## The retrieval interface (what `ask.py` calls)
 
@@ -162,7 +162,7 @@ clears it on "New question." Cache is bypassed when `history` is present.
 - `index.html` — current. Chat frontend with waking-up state + nav links.
 - `dashboard.html` — current. Eval dashboard; links to `themes.html`.
 - `themes.html` — current. Standalone theme tracker with score explanation callout.
-- `tests/test_pure.py`, `tests/__init__.py` — unit tests (95 cases, no network calls).
+- `tests/test_pure.py`, `tests/__init__.py` — unit tests (98 cases, no network calls).
 - `evals/eval.py`, `evals/dataset.json`, `evals/last_results.json` — current.
 - `evals/eval_ragas.py` — current. Optional RAGAS LLM-judge layer (see Known limitations).
 - `evals/results/` — RAGAS output files written here when eval_ragas.py is run.
@@ -254,6 +254,24 @@ clears it on "New question." Cache is bypassed when `history` is present.
   currently surface which two periods it picked outside of the passage headers. There is
   no UI entry point for this feature yet (no "diff mode" toggle) — it's reachable only by
   phrasing a question the way `_DIFF_PHRASES` expects.
+  **Bug found via live pre-deploy testing, fixed same day (2026-07-10):** several
+  `_DIFF_PHRASES` entries ("compare to the prior year", "vs last year", etc.) are generic
+  enough that an ordinary conversational follow-up naturally contains one regardless of
+  topic. A live Playwright test asked "What was Microsoft's total revenue in fiscal year
+  2025?" then followed up with "How does that compare to the prior year?" — the follow-up
+  matched `_DIFF_PHRASES`, no section was named so `detect_section()` defaulted to
+  `"risk_factors"`, and the ticker fell back to MSFT from history, so `_route()` silently
+  returned a full risk-factors diff instead of continuing the revenue conversation.
+  Fixed in `_route()`: when the ticker is only known via history fallback (not named in
+  the current question) *and* no section is named in the current question either, that
+  combination now skips `section_diff` and falls through to temporal/plain instead — the
+  signature of a generic follow-up, not a deliberate diff request. A ticker or section
+  named explicitly in the current question still routes to `section_diff` even with
+  unrelated history present (see `TestRoute.test_diff_phrase_with_history_ticker_but_explicit_section_still_diffs`
+  and `test_diff_phrase_with_explicit_ticker_in_question_still_diffs_despite_history`).
+  `eval.py` never sends `history`, so this fix cannot change any of the 110 golden-set
+  cases — confirmed by grepping `evals/eval.py` for `history` (no matches) before
+  skipping a full eval re-run. 3 new unit tests added; full suite: 98/98 passing.
 
 ## Conventions and rules
 

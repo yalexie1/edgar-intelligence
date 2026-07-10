@@ -172,6 +172,15 @@ def is_section_diff_question(question):
     return any(phrase in q for phrase in _DIFF_PHRASES)
 
 
+def _match_section_hint(question):
+    """Return the canonical section explicitly named in the question, or None."""
+    q = question.lower()
+    for hint, section in _SECTION_HINTS.items():
+        if hint in q:
+            return section
+    return None
+
+
 def detect_section(question):
     """Map a question to the canonical section it's asking about.
 
@@ -180,11 +189,7 @@ def detect_section(question):
     section-diff feature needs some section to filter on even when the user
     doesn't name one explicitly.
     """
-    q = question.lower()
-    for hint, section in _SECTION_HINTS.items():
-        if hint in q:
-            return section
-    return "risk_factors"
+    return _match_section_hint(question) or "risk_factors"
 
 
 def get_collection():
@@ -825,6 +830,7 @@ def _route(question, where, k, diverse, history):
     if not _has_ticker_filter(where):
         extra_where = where
         tickers = detect_tickers(question)
+        ticker_from_history = False
 
         # Fall back to the company named in prior turns when the follow-up
         # question doesn't explicitly name one (e.g. "how did they explain that?").
@@ -832,6 +838,7 @@ def _route(question, where, k, diverse, history):
             for h in reversed(history):
                 tickers = detect_tickers(h["question"])
                 if tickers:
+                    ticker_from_history = True
                     break
 
         # P2: structured per-company retrieval for explicit multi-company questions.
@@ -842,11 +849,31 @@ def _route(question, where, k, diverse, history):
         # checked before the (broader) temporal check — a diff question is a
         # special case of a trend question and needs the 2-period grouping in
         # _prepare_section_diff rather than _prepare_temporal's N-period one.
-        if len(tickers) == 1 and is_section_diff_question(question) and not diverse:
+        #
+        # Bug fix (2026-07-10): _DIFF_PHRASES includes generic comparative
+        # language ("compare to the prior year") that an ordinary conversational
+        # follow-up naturally uses regardless of topic. When the ticker is only
+        # known via history fallback (not named in this question) and no
+        # section is named either, that combination is the signature of a
+        # generic follow-up continuing whatever topic was already being
+        # discussed — not a deliberate request to diff a section. Caught via
+        # live testing: "How does that compare to the prior year?" after a
+        # revenue question was silently rerouted into a risk_factors diff for
+        # the prior turn's ticker, discarding the actual (revenue) topic.
+        # A ticker named explicitly in *this* question, or a section named
+        # explicitly in *this* question, still means the user deliberately
+        # wants a diff even with unrelated history present.
+        explicit_section = _extract_section_filter(extra_where) or _match_section_hint(question)
+        if (
+            len(tickers) == 1
+            and is_section_diff_question(question)
+            and not diverse
+            and (explicit_section or not ticker_from_history)
+        ):
             return {
                 "kind": "section_diff",
                 "ticker": tickers[0],
-                "section": _extract_section_filter(extra_where) or detect_section(question),
+                "section": explicit_section or "risk_factors",
                 "extra_where": extra_where,
             }
 

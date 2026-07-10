@@ -459,6 +459,46 @@ class TestRoute:
         )
         assert route["section"] == "mda"
 
+    # ── follow-up hijacking bug fix (2026-07-10) ───────────────────────────────
+    # A conversational follow-up like "how does that compare to the prior
+    # year?" naturally contains a _DIFF_PHRASES entry ("compare to the prior
+    # year") even though the user is continuing whatever topic (e.g. revenue)
+    # the conversation was already about. When the ticker can only be inferred
+    # from history (not named in the current question) and no section is
+    # named either, that's the signature of a generic follow-up, not a
+    # deliberate new section-diff request -- so section_diff must not fire.
+
+    def test_diff_phrase_with_history_only_ticker_and_no_section_skips_diff(self):
+        history = [{"question": "What was Microsoft's total revenue in fiscal year 2025?", "answer": "..."}]
+        route = _route(
+            "How does that compare to the prior year?", None, TOP_K, False, history,
+        )
+        assert route["kind"] != "section_diff"
+
+    def test_diff_phrase_with_history_ticker_but_explicit_section_still_diffs(self):
+        # If the user explicitly names a section in the follow-up, that's a
+        # deliberate section-diff request even though the ticker still comes
+        # from history -- only the *no section named* case is ambiguous.
+        history = [{"question": "What was Microsoft's total revenue in fiscal year 2025?", "answer": "..."}]
+        route = _route(
+            "What changed in the risk factors since last year?", None, TOP_K, False, history,
+        )
+        assert route["kind"] == "section_diff"
+        assert route["ticker"] == "MSFT"
+        assert route["section"] == "risk_factors"
+
+    def test_diff_phrase_with_explicit_ticker_in_question_still_diffs_despite_history(self):
+        # Ticker named directly in the current question (not a history
+        # fallback) is a deliberate, self-contained question -- diff routing
+        # should still apply even with unrelated history present.
+        history = [{"question": "What was Apple's total revenue in fiscal year 2025?", "answer": "..."}]
+        route = _route(
+            "What changed for Tesla since last year?", None, TOP_K, False, history,
+        )
+        assert route["kind"] == "section_diff"
+        assert route["ticker"] == "TSLA"
+        assert route["section"] == "risk_factors"
+
 
 # ── is_section_diff_question / detect_section ──────────────────────────────────
 
