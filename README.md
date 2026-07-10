@@ -1,4 +1,4 @@
-# EDGAR Intelligence (v2)
+# EDGAR Intelligence (v3)
 
 Ask plain-English questions about SEC filings from 13 large public companies and get grounded, cited answers — built with retrieval-augmented generation (RAG).
 
