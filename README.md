@@ -6,6 +6,10 @@ Try at: https://edgar-intelligence.vercel.app/
 
 NOTE: The backend is hosted on Render and spins down every 15 minutes when there's no activity. Please give up to 30-60 seconds for the backend to reboot if you're accessing the site for the first time.
 
+![Chat UI: a question, a cited answer with claim/quote/source/confidence, and an expanded source passage](docs/screenshots/chat-ui.png)
+
+![Eval dashboard: overall pass rate, retrieval hit-rate, faithfulness, abstain precision, and per-group breakdown](docs/screenshots/dashboard.png)
+
 ## What it does
 
 - Searches 8,141 embedded chunks from 10-K, 10-Q, and 8-K filings across AAPL, MSFT, GOOGL, AMZN, META, NVDA, AVGO, TSLA, ORCL, CRM, AMD, NFLX, and INTC
@@ -16,7 +20,7 @@ NOTE: The backend is hosted on Render and spins down every 15 minutes when there
 - Auto-detects company names in questions and applies the right metadata filter automatically
 - Cross-company questions ("compare AAPL and MSFT cloud margins") retrieve evidence per-ticker separately so every named company is guaranteed representation
 - Trend questions ("how has NVDA's gross margin changed?") retrieve across multiple filing periods and present results chronologically
-- "What changed" questions ("what changed in NVIDIA's risk factors since last year?") retrieve the same section from two consecutive filing periods and generate a structured added/removed/unchanged comparison
+- "What changed" questions ("what changed in NVIDIA's risk factors since last year?") retrieve the same section from two consecutive filing periods and generate a structured added/removed/unchanged comparison (defaults to Risk Factors if no section is named)
 - A Cohere cross-encoder reranks the top-50 retrieved candidates for precision before an answer is generated (falls back to local cosine+lexical ranking if unset)
 - Abstains honestly when the corpus doesn't cover the question
 
@@ -37,6 +41,8 @@ ask.py  ←→  api.py  (FastAPI, Render)  ←→  index.html     (chat UI)
 - **Retrieval**: Pinecone ANN (top-50 recall) → Cohere `rerank-v3.5` cross-encoder (precision) → structured per-entity retrieval for cross-company, temporal, and section-diff questions
 
 ## Setup
+
+Requires Python 3.11 or 3.12 (the core app works on any modern Python 3, but the optional RAGAS eval layer is incompatible with 3.14 — see Known Limitations).
 
 Clone the repository and install dependencies:
 
@@ -137,7 +143,7 @@ python evals/eval.py
 
 **Answer faithfulness** is scored only on cases with expected strings in `answer_contains` (12 cases). Cases without expected strings — including all 6 section-diff cases, since diff wording is non-deterministic — are retrieval-only checks and excluded from the faithfulness denominator.
 
-Last result: **107/110 (97%)** — retrieval 100%, abstain precision 100%, cross-company 100%, temporal 100% (18/18). The 3 misses are known retrieval-precision gaps (see `CLAUDE.md`'s Known Limitations), not routing bugs.  
+Last result: **107/110 (97%)** — retrieval 100%, abstain precision 100%, cross-company 100%, temporal 100% (18/18). The 3 misses are known retrieval-precision gaps (see Known Limitations below), not routing bugs.  
 Results are saved to `evals/last_results.json` and visible at `dashboard.html`.
 
 ### Layer 2 — RAGAS (complementary, optional)
@@ -176,10 +182,25 @@ Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`
 
 `themes.html` shows how strongly 8 predefined themes (AI/ML, Cybersecurity, Supply Chain, Regulation, China/Geopolitics, Climate/ESG, Competition, Cloud/Platform) appear in a company's filings across reporting periods. Scores are cosine + lexical rerank values — not frequency counts or sentiment. Retrieval-only, no LLM cost.
 
+## Known limitations
+
+- **Cross-company superlative questions** ("which company has the highest margin?") use broad retrieval rather than guaranteed per-ticker retrieval, so a company's strongest passage may not surface among the top candidates. Named comparisons ("compare AAPL and MSFT margins") use structured per-ticker retrieval and do guarantee coverage.
+- **"What changed" section-diff questions** rely on a fixed phrase list to detect intent and default to Risk Factors when no section is named — a differently-worded or unrelated-sounding follow-up can miss the list or diff the wrong section. There's no dedicated UI toggle for this mode yet; it's reachable only by phrasing the question the way the router expects.
+- **The section filter**, combined with a low-coverage ticker (INTC has only 22 chunks) or an uncommon section, can return thin or empty results without a clear signal why.
+- **INTC** has far fewer chunks than the other 12 companies because its XBRL-inline 10-K HTML produces very few extractable text blocks.
+- **Reranking weights** (the cosine + lexical boost formula, and use of the Cohere cross-encoder) are hardcoded heuristics, not tuned against the eval set.
+- **Cold starts**: the Render free-tier backend spins down after ~15 min idle; the first request after that takes 15–30s even with streaming.
+- **RAGAS** (the optional LLM-judge eval layer) is blocked on Python 3.14 due to a `nest_asyncio` incompatibility — run it on Python 3.11 or 3.12.
+- **Rate limiting and CORS** protect against casual abuse, not a determined attacker with rotating IPs.
+- One known eval miss: `avgo_gross_margin` — retrieval surfaces a restructuring 8-K chunk instead of the margin table, and the model correctly abstains rather than guessing.
+
 ## Notes
 
 - `.env` holds secret keys and is gitignored. Never commit it.
 - Every SEC EDGAR request sends a `User-Agent` header (name + email, required by SEC policy).
 - `ingest.py` is frozen — do not modify unless you intend to rebuild the full corpus from scratch.
 - The public endpoint has per-IP rate limiting (10 req/min, 200 req/day) and a global daily cap (2000 req/day).
-- The "what changed" section-diff feature has no dedicated UI toggle yet — it's reachable by phrasing a question the way the router expects (e.g. "what changed in NVIDIA's risk factors since last year?"). See `CLAUDE.md`'s Known Limitations for the full list of known gaps.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
