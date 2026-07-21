@@ -8,8 +8,11 @@ Covers:
   - detect_tickers     (ask)
   - chunk_section      (ingest)
   - _route             (ask) — retrieval-strategy routing shared by ask()/ask_stream()
+  - _record            (ask) — v4 #1 per-stage timing helper
+  - _percentile, _metrics_summary, _build_log_payload (api) — v4 #1 observability
 """
 
+import time
 import types
 
 import pytest
@@ -18,11 +21,13 @@ from embed_and_search import build_where, canonical_section, diversify_results, 
 from ask import (
     detect_tickers,
     _route,
+    _record,
     is_section_diff_question,
     detect_section,
     build_diff_prompt,
 )
 from ingest import chunk_section, CHUNK_SIZE, MIN_CHUNK_CHARS
+from api import _percentile, _metrics_summary, _build_log_payload
 
 
 # ── canonical_section ─────────────────────────────────────────────────────────
@@ -619,3 +624,128 @@ class TestBuildDiffPrompt:
             "What changed?", self._period_chunks(), "NVDA", "risk_factors", history=history
         )
         assert "What was NVDA's revenue?" in prompt
+
+
+# ── _record (ask.py — v4 #1 timing helper) ──────────────────────────────────
+
+class TestRecordTiming:
+    def test_records_nonnegative_elapsed_seconds(self):
+        timing = {}
+        start = time.perf_counter()
+        _record(timing, "retrieval_s", start)
+        assert "retrieval_s" in timing
+        assert timing["retrieval_s"] >= 0
+
+    def test_noop_when_timing_is_none(self):
+        # Must not raise — callers that don't want instrumentation (CLI,
+        # ask_with_contexts, evals) pass nothing and pay zero cost.
+        _record(None, "retrieval_s", time.perf_counter())
+
+    def test_does_not_touch_other_keys(self):
+        timing = {"route": "plain"}
+        _record(timing, "generation_s", time.perf_counter())
+        assert timing["route"] == "plain"
+        assert "generation_s" in timing
+
+
+# ── _percentile (api.py — v4 #1 /metrics helper) ────────────────────────────
+
+class TestPercentile:
+    def test_empty_list_returns_none(self):
+        assert _percentile([], 0.50) is None
+
+    def test_single_value_returns_that_value(self):
+        assert _percentile([42.0], 0.99) == 42.0
+
+    def test_p50_of_five_values(self):
+        assert _percentile([10.0, 20.0, 30.0, 40.0, 50.0], 0.50) == 30.0
+
+    def test_p100_returns_max(self):
+        assert _percentile([10.0, 20.0, 30.0], 1.0) == 30.0
+
+    def test_p0_returns_min(self):
+        assert _percentile([10.0, 20.0, 30.0], 0.0) == 10.0
+
+    def test_interpolates_between_values(self):
+        # n=5, p95 -> k = 4*0.95 = 3.8 -> interpolate between index 3 (40) and 4 (50)
+        result = _percentile([10.0, 20.0, 30.0, 40.0, 50.0], 0.95)
+        assert result == pytest.approx(48.0)
+
+
+# ── _metrics_summary (api.py — v4 #1 /metrics endpoint) ─────────────────────
+
+class TestMetricsSummary:
+    def test_empty_window_returns_zero_count(self):
+        assert _metrics_summary([]) == {"count": 0}
+
+    def test_computes_percentiles_per_stage(self):
+        window = [
+            {"total_s": 1.0, "retrieval_s": 0.5, "route": "plain"},
+            {"total_s": 2.0, "retrieval_s": 0.7, "route": "plain"},
+            {"total_s": 3.0, "retrieval_s": 0.9, "route": "temporal"},
+        ]
+        summary = _metrics_summary(window)
+        assert summary["count"] == 3
+        assert summary["total_s"]["count"] == 3
+        assert summary["total_s"]["p50"] == 2.0
+
+    def test_excludes_entries_missing_a_stage_from_that_stages_stats(self):
+        # rerank_s is absent when diverse mode or temporal/section_diff ran —
+        # it must not be treated as 0 in the percentile computation.
+        window = [
+            {"total_s": 1.0, "retrieval_s": 0.5, "rerank_s": 0.2, "route": "plain"},
+            {"total_s": 2.0, "retrieval_s": 0.7, "route": "temporal"},
+        ]
+        summary = _metrics_summary(window)
+        assert summary["rerank_s"]["count"] == 1
+        assert summary["retrieval_s"]["count"] == 2
+
+    def test_aggregates_route_counts(self):
+        window = [
+            {"total_s": 1.0, "route": "plain"},
+            {"total_s": 1.0, "route": "plain"},
+            {"total_s": 1.0, "route": "temporal"},
+        ]
+        summary = _metrics_summary(window)
+        assert summary["routes"] == {"plain": 2, "temporal": 1}
+
+    def test_missing_route_key_labeled_unknown(self):
+        summary = _metrics_summary([{"total_s": 1.0}])
+        assert summary["routes"] == {"unknown": 1}
+
+
+# ── _build_log_payload (api.py — v4 #1 structured request logging) ─────────
+
+class TestBuildLogPayload:
+    def test_includes_core_fields(self):
+        payload = _build_log_payload(
+            "req-123", "/query", "plain", {"retrieval_s": 0.4, "generation_s": 1.1},
+            False, 5, "What was Apple's revenue?", 1.6,
+        )
+        assert payload["request_id"] == "req-123"
+        assert payload["endpoint"] == "/query"
+        assert payload["route"] == "plain"
+        assert payload["cache_hit"] is False
+        assert payload["num_results"] == 5
+        assert payload["question"] == "What was Apple's revenue?"
+        assert payload["total_s"] == 1.6
+
+    def test_includes_present_stage_timings(self):
+        payload = _build_log_payload(
+            "req-1", "/query", "plain", {"retrieval_s": 0.4, "generation_s": 1.1},
+            False, 5, "q", 1.6,
+        )
+        assert payload["retrieval_s"] == 0.4
+        assert payload["generation_s"] == 1.1
+
+    def test_omits_absent_stage_timings(self):
+        # An abstain response never calls the model — generation_s never runs.
+        payload = _build_log_payload(
+            "req-2", "/query", "plain", {"retrieval_s": 0.4}, False, 0, "q", 0.5,
+        )
+        assert "generation_s" not in payload
+        assert "rerank_s" not in payload
+
+    def test_cache_hit_true_when_served_from_cache(self):
+        payload = _build_log_payload("req-3", "/query", "cache", {}, True, 5, "q", 0.01)
+        assert payload["cache_hit"] is True

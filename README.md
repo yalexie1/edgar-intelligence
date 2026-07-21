@@ -1,5 +1,7 @@
 # EDGAR Intelligence (v3)
 
+[![Tests](https://github.com/yalexie1/edgar-intelligence/actions/workflows/tests.yml/badge.svg)](https://github.com/yalexie1/edgar-intelligence/actions/workflows/tests.yml)
+
 Ask plain-English questions about SEC filings from 13 large public companies and get grounded, cited answers — built with retrieval-augmented generation (RAG).
 
 Try at: https://edgar-intelligence.vercel.app/

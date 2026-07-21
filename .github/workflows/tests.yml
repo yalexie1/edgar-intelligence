@@ -1,0 +1,26 @@
+name: Tests
+
+# Runs the pure-logic unit suite on every push and PR. Free and network-free:
+# tests/test_pure.py makes zero API calls, so no secrets are needed here.
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Matches render.yaml's deployed PYTHON_VERSION, closing the
+          # local-dev-vs-deploy drift noted in V4.md item #5.
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: python -m pytest tests/ -v
