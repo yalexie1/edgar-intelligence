@@ -21,6 +21,7 @@ Run:  python ask.py
 import argparse
 import os
 import sys
+import time
 
 import cohere
 from anthropic import Anthropic
@@ -475,6 +476,17 @@ def _merge_where(where, extra):
     return {"$and": [where, extra]}
 
 
+def _record(timing, key, start):
+    """Record elapsed time since `start` into `timing[key]` (v4 #1 tracing).
+
+    No-op when `timing` is None so instrumentation costs nothing for callers
+    that don't ask for it (CLI `main()`, `ask_with_contexts`, evals — none of
+    which pass a `timing` dict).
+    """
+    if timing is not None:
+        timing[key] = time.perf_counter() - start
+
+
 def _thin_evidence_abstain(results, message):
     """Shared 'best evidence still too weak' check for all three _prepare_* paths.
 
@@ -529,7 +541,7 @@ def _rerank_with_cohere(results, question, k):
     return [results[item.index] for item in response.results]
 
 
-def _prepare_cross_company(collection, question, tickers, k, history, extra_where=None):
+def _prepare_cross_company(collection, question, tickers, k, history, extra_where=None, timing=None):
     """Retrieve evidence per named company and build the comparison prompt (or abstain).
 
     `extra_where` is an additional metadata filter (e.g. {"section": "risk_factors"})
@@ -543,6 +555,12 @@ def _prepare_cross_company(collection, question, tickers, k, history, extra_wher
     max_tokens = 1400
     k_per = max(CROSS_COMPANY_K_PER_TICKER, k)
     company_results = {}
+    # retrieval_s covers the whole per-ticker loop, including each ticker's own
+    # Cohere rerank pass below — the two interleave per-ticker, so splitting
+    # them into separate retrieval_s/rerank_s timers here would require timing
+    # N partial slices instead of one clean stage; not worth the complexity for
+    # a per-request tracing feature (see v4 #1 DEVLOG entry).
+    t0 = time.perf_counter()
     for ticker in tickers:
         where = _merge_where({"ticker": ticker}, extra_where)
         # Rerank per-ticker (not across the flattened pool) so a weaker company's
@@ -550,6 +568,7 @@ def _prepare_cross_company(collection, question, tickers, k, history, extra_wher
         # guarantee (every named ticker gets k_per chunks) has to hold post-rerank.
         candidates = search(collection, question, where=where, k=CANDIDATE_K)
         company_results[ticker] = _rerank_with_cohere(candidates, question, k_per)
+    _record(timing, "retrieval_s", t0)
 
     flat = [r for rs in company_results.values() for r in rs]
     if not flat:
@@ -573,28 +592,30 @@ def _prepare_cross_company(collection, question, tickers, k, history, extra_wher
     return prompt, None, flat, None, max_tokens
 
 
-def _ask_cross_company(collection, question, tickers, k, history, extra_where=None, model=None):
+def _ask_cross_company(collection, question, tickers, k, history, extra_where=None, model=None, timing=None):
     """Structured retrieval: pull evidence per named company, then synthesize.
 
     Returns (answer_text, flat_results_list, None). effective_where is None
     because there is no single filter — each company has its own.
     """
     prompt, abstain, results, effective_where, max_tokens = _prepare_cross_company(
-        collection, question, tickers, k, history, extra_where=extra_where
+        collection, question, tickers, k, history, extra_where=extra_where, timing=timing
     )
     if abstain is not None:
         return abstain, results, effective_where
 
     client = Anthropic()
+    t0 = time.perf_counter()
     msg = client.messages.create(
         model=model or ANSWER_MODEL,
         max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
+    _record(timing, "generation_s", t0)
     return msg.content[0].text, results, effective_where
 
 
-def _prepare_temporal(collection, question, ticker, k, history, extra_where=None):
+def _prepare_temporal(collection, question, ticker, k, history, extra_where=None, timing=None):
     """Structured temporal retrieval: group evidence by period (or abstain).
 
     Retrieves a large candidate pool for the ticker, then picks the top result
@@ -610,7 +631,9 @@ def _prepare_temporal(collection, question, ticker, k, history, extra_where=None
     # relevance before the per-period grouping below would undermine that.
     raw_k = k * DIVERSE_CANDIDATE_MULTIPLIER * 2
     where = _merge_where({"ticker": ticker}, extra_where)
+    t0 = time.perf_counter()
     candidates = search(collection, question, where=where, k=raw_k)
+    _record(timing, "retrieval_s", t0)
 
     if not candidates:
         return (
@@ -648,27 +671,29 @@ def _prepare_temporal(collection, question, ticker, k, history, extra_where=None
     return prompt, None, selected, where, max_tokens
 
 
-def _ask_temporal(collection, question, ticker, k, history, extra_where=None, model=None):
+def _ask_temporal(collection, question, ticker, k, history, extra_where=None, model=None, timing=None):
     """Structured temporal retrieval: group evidence by period, sort chronologically.
 
     Returns (answer_text, results_list, effective_where).
     """
     prompt, abstain, results, effective_where, max_tokens = _prepare_temporal(
-        collection, question, ticker, k, history, extra_where=extra_where
+        collection, question, ticker, k, history, extra_where=extra_where, timing=timing
     )
     if abstain is not None:
         return abstain, results, effective_where
 
     client = Anthropic()
+    t0 = time.perf_counter()
     msg = client.messages.create(
         model=model or ANSWER_MODEL,
         max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
+    _record(timing, "generation_s", t0)
     return msg.content[0].text, results, effective_where
 
 
-def _prepare_section_diff(collection, question, ticker, section, k, history, extra_where=None):
+def _prepare_section_diff(collection, question, ticker, section, k, history, extra_where=None, timing=None):
     """Structured section-diff retrieval: same section, two most recent periods.
 
     Filters to the ticker and (unless the caller's own filter already pins a
@@ -686,7 +711,9 @@ def _prepare_section_diff(collection, question, ticker, section, k, history, ext
     if _extract_section_filter(where) is None:
         where = _merge_where(where, {"section": section})
 
+    t0 = time.perf_counter()
     candidates = search(collection, question, where=where, k=CANDIDATE_K)
+    _record(timing, "retrieval_s", t0)
 
     if not candidates:
         return (
@@ -706,7 +733,12 @@ def _prepare_section_diff(collection, question, ticker, section, k, history, ext
     periods_sorted = sorted(period_buckets.keys())
     if len(periods_sorted) < 2:
         # Nothing to diff — fall back to the temporal path's N-period grouping.
-        return _prepare_temporal(collection, question, ticker, k, history, extra_where=extra_where)
+        # Note: this makes a second search() call, so timing["retrieval_s"]
+        # ends up reflecting that second (temporal) call, not the one above —
+        # an acceptable simplification for a per-request tracing feature.
+        return _prepare_temporal(
+            collection, question, ticker, k, history, extra_where=extra_where, timing=timing
+        )
 
     two_most_recent = periods_sorted[-2:]
     period_chunks = {p: period_buckets[p][:2] for p in two_most_recent}
@@ -723,27 +755,29 @@ def _prepare_section_diff(collection, question, ticker, section, k, history, ext
     return prompt, None, selected, where, max_tokens
 
 
-def _ask_section_diff(collection, question, ticker, section, k, history, extra_where=None, model=None):
+def _ask_section_diff(collection, question, ticker, section, k, history, extra_where=None, model=None, timing=None):
     """Structured section-diff retrieval: same section across two consecutive periods.
 
     Returns (answer_text, results_list, effective_where).
     """
     prompt, abstain, results, effective_where, max_tokens = _prepare_section_diff(
-        collection, question, ticker, section, k, history, extra_where=extra_where
+        collection, question, ticker, section, k, history, extra_where=extra_where, timing=timing
     )
     if abstain is not None:
         return abstain, results, effective_where
 
     client = Anthropic()
+    t0 = time.perf_counter()
     msg = client.messages.create(
         model=model or ANSWER_MODEL,
         max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
+    _record(timing, "generation_s", t0)
     return msg.content[0].text, results, effective_where
 
 
-def _prepare_plain(collection, question, where, k, diverse, history):
+def _prepare_plain(collection, question, where, k, diverse, history, timing=None):
     """Retrieval for the default (non-structured) path: retrieve, build the prompt,
     or abstain.
 
@@ -759,14 +793,20 @@ def _prepare_plain(collection, question, where, k, diverse, history):
         # "Which companies" questions use BROAD_DIVERSE_MULTIPLIER for more ticker coverage.
         multiplier = BROAD_DIVERSE_MULTIPLIER if is_cross_company_question(question) else DIVERSE_CANDIDATE_MULTIPLIER
         raw_k = k * multiplier
+        t0 = time.perf_counter()
         results = search(collection, question, where=where, k=raw_k)
+        _record(timing, "retrieval_s", t0)
         results = diversify_results(results, k=k, by="ticker")
     else:
         # Two-stage retrieval: pull the full CANDIDATE_K pool from Pinecone (broad
         # recall via cosine + lexical boost), then let Cohere's cross-encoder
         # re-rank for precision before truncating to k.
+        t0 = time.perf_counter()
         candidates = search(collection, question, where=where, k=CANDIDATE_K)
+        _record(timing, "retrieval_s", t0)
+        t1 = time.perf_counter()
         results = _rerank_with_cohere(candidates, question, k)
+        _record(timing, "rerank_s", t1)
 
     if not results:
         return (
@@ -789,23 +829,25 @@ def _prepare_plain(collection, question, where, k, diverse, history):
     return prompt, None, results, where, max_tokens
 
 
-def _ask_plain(collection, question, where, k, diverse, history, model=None):
+def _ask_plain(collection, question, where, k, diverse, history, model=None, timing=None):
     """Default single-search path: retrieve, build the prompt, and answer.
 
     Returns (answer_text, results_list, effective_where).
     """
     prompt, abstain, results, effective_where, max_tokens = _prepare_plain(
-        collection, question, where, k, diverse, history
+        collection, question, where, k, diverse, history, timing=timing
     )
     if abstain is not None:
         return abstain, results, effective_where
 
     client = Anthropic()  # reads ANTHROPIC_API_KEY from the environment
+    t0 = time.perf_counter()
     msg = client.messages.create(
         model=model or ANSWER_MODEL,
         max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
+    _record(timing, "generation_s", t0)
     return msg.content[0].text, results, effective_where
 
 
@@ -892,7 +934,7 @@ def _route(question, where, k, diverse, history):
     return {"kind": "plain", "where": where, "k": k, "diverse": diverse}
 
 
-def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None):
+def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None, timing=None):
     """Retrieve evidence and produce a grounded, cited answer.
 
     Returns (answer_text, results_list, effective_where). Each result dict has:
@@ -906,28 +948,40 @@ def ask(collection, question, where=None, k=TOP_K, diverse=False, history=None, 
       - "Which company" questions (no specific tickers) → expanded diverse pool.
       - Everything else → original single-search path (_ask_plain).
 
+    `timing` (v4 #1, optional): a dict the caller supplies to be filled in with
+    per-stage latencies (retrieval_s, rerank_s, generation_s — a key is absent
+    when that stage didn't run) plus `route`. Mutated in place rather than
+    returned, so ask()'s existing 3-tuple return contract (relied on by
+    api.py's cache and by evals) stays unchanged. Callers that don't pass a
+    dict (CLI `main()`, `ask_with_contexts`) get zero instrumentation cost.
+
     See ask_stream() for the token-streaming counterpart used by /query/stream.
     """
     route = _route(question, where, k, diverse, history)
+    if timing is not None:
+        timing["route"] = route["kind"]
     if route["kind"] == "cross_company":
         return _ask_cross_company(
             collection, question, route["tickers"], k, history,
-            extra_where=route.get("extra_where"), model=model,
+            extra_where=route.get("extra_where"), model=model, timing=timing,
         )
     if route["kind"] == "section_diff":
         return _ask_section_diff(
             collection, question, route["ticker"], route["section"], k, history,
-            extra_where=route.get("extra_where"), model=model,
+            extra_where=route.get("extra_where"), model=model, timing=timing,
         )
     if route["kind"] == "temporal":
         return _ask_temporal(
             collection, question, route["ticker"], k, history,
-            extra_where=route.get("extra_where"), model=model,
+            extra_where=route.get("extra_where"), model=model, timing=timing,
         )
-    return _ask_plain(collection, question, route["where"], route["k"], route["diverse"], history, model=model)
+    return _ask_plain(
+        collection, question, route["where"], route["k"], route["diverse"], history,
+        model=model, timing=timing,
+    )
 
 
-def ask_stream(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None):
+def ask_stream(collection, question, where=None, k=TOP_K, diverse=False, history=None, model=None, timing=None):
     """Streaming counterpart to ask(): yields answer text as it arrives from the model.
 
     Mirrors ask()'s routing (via the same _route() call) so retrieval and abstain
@@ -946,25 +1000,35 @@ def ask_stream(collection, question, where=None, k=TOP_K, diverse=False, history
         {"__meta__": True, "results": [...], "effective_where": ...}
 
     Does not touch the LRU cache in api.py — streaming responses are not cached.
+
+    `timing` (v4 #1, optional): same contract as ask()'s — a dict the caller
+    supplies to be filled in with per-stage latencies plus `route`, mutated in
+    place as the generator progresses. retrieval_s/rerank_s are populated by
+    the time the __meta__ sentinel is yielded (retrieval already happened by
+    then); generation_s is only populated once the generator is exhausted.
     """
     route = _route(question, where, k, diverse, history)
+    if timing is not None:
+        timing["route"] = route["kind"]
 
     if route["kind"] == "cross_company":
         prompt, abstain, results, effective_where, max_tokens = _prepare_cross_company(
-            collection, question, route["tickers"], k, history, extra_where=route.get("extra_where")
+            collection, question, route["tickers"], k, history,
+            extra_where=route.get("extra_where"), timing=timing,
         )
     elif route["kind"] == "section_diff":
         prompt, abstain, results, effective_where, max_tokens = _prepare_section_diff(
             collection, question, route["ticker"], route["section"], k, history,
-            extra_where=route.get("extra_where"),
+            extra_where=route.get("extra_where"), timing=timing,
         )
     elif route["kind"] == "temporal":
         prompt, abstain, results, effective_where, max_tokens = _prepare_temporal(
-            collection, question, route["ticker"], k, history, extra_where=route.get("extra_where")
+            collection, question, route["ticker"], k, history,
+            extra_where=route.get("extra_where"), timing=timing,
         )
     else:
         prompt, abstain, results, effective_where, max_tokens = _prepare_plain(
-            collection, question, route["where"], route["k"], route["diverse"], history
+            collection, question, route["where"], route["k"], route["diverse"], history, timing=timing,
         )
 
     yield {"__meta__": True, "results": results, "effective_where": effective_where}
@@ -974,6 +1038,7 @@ def ask_stream(collection, question, where=None, k=TOP_K, diverse=False, history
         return
 
     client = Anthropic()
+    t0 = time.perf_counter()
     with client.messages.stream(
         model=model or ANSWER_MODEL,
         max_tokens=max_tokens,
@@ -981,6 +1046,7 @@ def ask_stream(collection, question, where=None, k=TOP_K, diverse=False, history
     ) as stream:
         for text in stream.text_stream:
             yield text
+    _record(timing, "generation_s", t0)
 
 
 # Fixed set of themes relevant to SEC filings, each mapped to a natural-language

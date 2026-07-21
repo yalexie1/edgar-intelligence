@@ -9,8 +9,12 @@ Endpoints:
 
 import datetime
 import json
+import logging
+import math
 import os
-from collections import OrderedDict
+import time
+import uuid
+from collections import OrderedDict, deque
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -56,6 +60,97 @@ def _cache_set(key: str, value) -> None:
     _CACHE[key] = value
     if len(_CACHE) > _CACHE_MAX:
         _CACHE.popitem(last=False)  # evict oldest
+
+
+# ── observability (v4 #1: request tracing & latency) ───────────────────────────
+# One structured JSON line per request to stdout (Render captures stdout as logs).
+# Deliberately logs the full question text — SEC filing Q&A is low-sensitivity
+# content (same framing as CLAUDE.md's existing privacy posture), and full text
+# is far more useful than a truncated/omitted one for debugging routing/retrieval.
+logger = logging.getLogger("edgar_rag")
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.addHandler(_handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+# Rolling window of recent per-request timings, for the /metrics endpoint.
+# In-memory only — resets on restart, same tradeoff as the LRU cache above.
+_METRICS_WINDOW_SIZE = 200
+_metrics_window: deque = deque(maxlen=_METRICS_WINDOW_SIZE)
+
+
+def _build_log_payload(request_id, endpoint, route, timing, cache_hit, num_results, question, total_s):
+    """Assemble one structured, JSON-loggable line for a completed request.
+
+    `timing` is the per-stage dict `ask()`/`ask_stream()` populate (keys:
+    retrieval_s, rerank_s, generation_s) — a stage key is simply absent when
+    that stage didn't run (e.g. diverse mode skips rerank; an abstain skips
+    generation entirely), rather than being recorded as zero.
+    """
+    payload = {
+        "request_id": request_id,
+        "endpoint": endpoint,
+        "route": route,
+        "cache_hit": cache_hit,
+        "num_results": num_results,
+        "question": question,
+        "total_s": round(total_s, 4),
+    }
+    for stage in ("retrieval_s", "rerank_s", "generation_s"):
+        if stage in timing:
+            payload[stage] = round(timing[stage], 4)
+    return payload
+
+
+def _percentile(sorted_values, pct):
+    """Linear-interpolation percentile over an already-sorted list of floats.
+
+    `pct` is a fraction in [0, 1] (0.95 = p95). Returns None for an empty list.
+    """
+    if not sorted_values:
+        return None
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    k = (len(sorted_values) - 1) * pct
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return sorted_values[int(k)]
+    return sorted_values[f] + (sorted_values[c] - sorted_values[f]) * (k - f)
+
+
+def _metrics_summary(window):
+    """Aggregate recent per-request timing entries into p50/p95/p99 per stage.
+
+    `window` is an iterable of dicts shaped like `timing` (plus a `total_s`
+    key the request handlers add). A stage absent from an entry (e.g.
+    rerank_s when diverse/temporal/section_diff skipped it) is excluded from
+    that stage's percentiles rather than counted as zero.
+    """
+    entries = list(window)
+    if not entries:
+        return {"count": 0}
+
+    summary: dict = {"count": len(entries)}
+    for stage in ("total_s", "retrieval_s", "rerank_s", "generation_s"):
+        values = sorted(e[stage] for e in entries if stage in e)
+        if not values:
+            continue
+        summary[stage] = {
+            "p50": round(_percentile(values, 0.50), 4),
+            "p95": round(_percentile(values, 0.95), 4),
+            "p99": round(_percentile(values, 0.99), 4),
+            "count": len(values),
+        }
+
+    route_counts: dict = {}
+    for e in entries:
+        r = e.get("route", "unknown")
+        route_counts[r] = route_counts.get(r, 0) + 1
+    summary["routes"] = route_counts
+    return summary
 
 
 # ── rate limiting (per-IP) ─────────────────────────────────────────────────────
@@ -219,30 +314,49 @@ def query(request: Request, q: Query):
     _check_global_cap()
 
     where = _build_where(q)
+    request_id = str(uuid.uuid4())
+    start = time.perf_counter()
+    timing: dict = {}
 
     try:
         # Only cache when there's no conversation history — history makes each
         # request contextually unique and caching it would return stale context.
         cache_key = _cache_key(q.question, where, q.diverse) if not q.history else None
         cached = _cache_get(cache_key) if cache_key else None
+        cache_hit = cached is not None
         if cached:
             answer, results, effective_where = cached
         else:
             answer, results, effective_where = ask(
                 collection, q.question, where=where, k=q.k, diverse=q.diverse,
-                history=q.history, model=ANSWER_MODEL,
+                history=q.history, model=ANSWER_MODEL, timing=timing,
             )
             if cache_key:
                 _cache_set(cache_key, (answer, results, effective_where))
     except Exception as e:
         raise HTTPException(500, f"Failed to answer: {e}")
 
+    total_s = time.perf_counter() - start
+    # A cache hit never calls ask(), so timing stays empty — label it "cache"
+    # rather than "unknown" for a route that never ran routing at all.
+    route = timing.get("route", "cache")
+    logger.info(json.dumps(_build_log_payload(
+        request_id, "/query", route, timing, cache_hit, len(results), q.question, total_s,
+    )))
+    # timing["route"] is only set when ask() actually ran _route() — a cache
+    # hit skips ask() entirely, so timing stays empty. Set "route" explicitly
+    # here (from the same resolved `route` used for logging above) so a cache
+    # hit shows up as "cache" in /metrics instead of "unknown".
+    _metrics_window.append({**timing, "route": route, "total_s": total_s})
+
     # Success shape is frozen — do not change field names or remove fields.
+    # request_id is additive (same pattern as v3 §3's "text" field on sources).
     return {
         "question": q.question,
         "answer": answer,
         "sources": _build_sources(results),
         "filter_applied": effective_where,
+        "request_id": request_id,
     }
 
 
@@ -264,23 +378,37 @@ def query_stream(request: Request, q: Query):
     _validate_query(q)
     _check_global_cap()
     where = _build_where(q)
+    request_id = str(uuid.uuid4())
 
     def event_stream():
+        start = time.perf_counter()
+        timing: dict = {}
+        results, effective_where = [], where
         try:
-            results, effective_where = [], where
             for chunk in ask_stream(
                 collection, q.question, where=where, k=q.k, diverse=q.diverse,
-                history=q.history, model=ANSWER_MODEL,
+                history=q.history, model=ANSWER_MODEL, timing=timing,
             ):
                 if isinstance(chunk, dict) and chunk.get("__meta__"):
                     results = chunk["results"]
                     effective_where = chunk["effective_where"]
-                    payload = {"sources": _build_sources(results), "filter_applied": effective_where}
+                    payload = {
+                        "sources": _build_sources(results),
+                        "filter_applied": effective_where,
+                        "request_id": request_id,
+                    }
                     yield f"data: {json.dumps(payload)}\n\n"
                 else:
                     yield f"data: {json.dumps({'token': chunk})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+        total_s = time.perf_counter() - start
+        logger.info(json.dumps(_build_log_payload(
+            request_id, "/query/stream", timing.get("route", "unknown"),
+            timing, False, len(results), q.question, total_s,
+        )))
+        _metrics_window.append({**timing, "total_s": total_s})
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
@@ -317,6 +445,17 @@ def themes_endpoint(request: Request, ticker: str, themes: str = ""):
         requested = {s.strip() for s in themes.split(",") if s.strip()}
         result["themes"] = {k: v for k, v in result["themes"].items() if k in requested}
     return result
+
+
+@app.get("/metrics")
+def metrics():
+    """Rolling-window p50/p95/p99 latency breakdown per pipeline stage (v4 #1).
+
+    In-memory only — covers the last _METRICS_WINDOW_SIZE (200) requests since
+    the process last restarted (same tradeoff as the LRU cache). No external
+    dependency, no new service to run.
+    """
+    return _metrics_summary(_metrics_window)
 
 
 @app.get("/evals/results")
