@@ -1,11 +1,111 @@
 id,group,question,elapsed,faithfulness,answer_relevancy,context_precision,context_recall
-aapl_fy2025_revenue,factual,What was Apple's total revenue in fiscal year 2025?,3.26,nan,nan,nan,nan
-nvda_datacenter_q2fy25,factual,What was NVIDIA's data center revenue in the second quarter of fiscal year 2025 and how did it grow year over year?,3.59,nan,nan,nan,nan
-msft_cloud_growth,factual,What percentage did Microsoft's overall revenue grow in its most recent quarterly filing?,4.59,nan,nan,nan,nan
-googl_cloud_growth,factual,How fast did Google Cloud revenue grow year over year in Google's most recent quarterly filing?,2.1,nan,nan,nan,nan
-avgo_gross_margin,factual,What was Broadcom's gross margin percentage in its most recent quarterly filing?,3.15,nan,nan,nan,nan
-aapl_revenue_yoy,factual,How did Apple's total revenue change between fiscal year 2024 and fiscal year 2025?,3.72,nan,nan,nan,nan
-nflx_strategy,factual,What is Netflix's stated strategy for growing its business?,3.88,nan,nan,nan,nan
-tsla_competition,factual,How does Tesla describe the competitive landscape in the EV market?,4.2,nan,nan,nan,nan
-amd_ai_risks,factual,What AI-related risks does AMD disclose in its SEC filings?,6.15,nan,nan,nan,nan
-intc_challenges,factual,What major business challenges does Intel describe in its most recent filings?,3.81,nan,nan,nan,nan
+aapl_fy2025_revenue,factual,What was Apple's total revenue in fiscal year 2025?,5.46,0.875,0.9795,0.2,0.0
+nvda_datacenter_q2fy25,factual,What was NVIDIA's data center revenue in the second quarter of fiscal year 2025 and how did it grow year over year?,4.54,1.0,0.8985,1.0,1.0
+msft_cloud_growth,factual,What percentage did Microsoft's overall revenue grow in its most recent quarterly filing?,5.99,0.8261,0.0,0.0,0.0
+googl_cloud_growth,factual,How fast did Google Cloud revenue grow year over year in Google's most recent quarterly filing?,5.91,0.5,0.9645,0.3333,0.0
+avgo_gross_margin,factual,What was Broadcom's gross margin percentage in its most recent quarterly filing?,4.47,0.8,0.0,0.0,0.0
+aapl_revenue_yoy,factual,How did Apple's total revenue change between fiscal year 2024 and fiscal year 2025?,4.42,0.8667,0.0,0.2,0.0
+nflx_strategy,factual,What is Netflix's stated strategy for growing its business?,4.8,1.0,0.9788,1.0,1.0
+tsla_competition,factual,How does Tesla describe the competitive landscape in the EV market?,6.89,0.9231,0.9841,0.0,0.0
+amd_ai_risks,factual,What AI-related risks does AMD disclose in its SEC filings?,5.51,0.875,0.0,0.8875,1.0
+intc_challenges,factual,What major business challenges does Intel describe in its most recent filings?,3.88,0.7778,0.0,0.0,0.0
+aapl_iphone_revenue_fy2025,factual,What was Apple's iPhone revenue in fiscal year 2025?,6.2,0.6667,1.0,0.25,1.0
+aapl_americas_revenue,factual,What were Apple's Americas segment net sales in fiscal year 2025?,7.84,1.0,0.9985,0.8333,0.0
+avgo_tsmc_concentration,factual,What percentage of Broadcom's wafers were manufactured by TSMC?,5.0,0.625,0.9784,1.0,1.0
+googl_total_revenue_q3cy25,factual,What was Google's total revenue in the third quarter of calendar year 2025?,3.14,nan,0.9809,0.25,1.0
+nvda_datacenter_fy2025_fullyear,factual,By what percentage did NVIDIA's data center computing revenue grow in full-year fiscal year 2025?,5.81,1.0,0.9789,0.75,1.0
+msft_ai_risk_disclosure,factual,What risks does Microsoft disclose related to artificial intelligence in its SEC filings?,16.57,0.7333,0.9102,0.2815,nan
+meta_ai_investment,factual,What does Meta say about its capital expenditure plans for AI infrastructure?,4.65,1.0,0.0,0.0,0.0
+amzn_aws_description,factual,How does Amazon describe the AWS business and its role in the company?,4.92,1.0,0.9014,0.8042,1.0
+tsla_energy_business,factual,How does Tesla describe its energy generation and storage business segment?,6.05,0.8182,0.944,1.0,1.0
+orcl_cloud_strategy,factual,How does Oracle describe its cloud infrastructure and applications strategy?,8.21,0.8182,0.9692,0.0,0.0
+crm_revenue_segments,factual,What are Salesforce's primary revenue categories as described in its filings?,12.97,1.0,0.9609,0.5,1.0
+nflx_ad_tier,factual,What does Netflix say about its advertising-supported subscription tier?,5.35,1.0,1.0,0.3667,0.0
+amd_data_center_revenue,factual,How does AMD describe its data center segment performance in recent filings?,7.21,1.0,0.9064,0.5889,0.0
+intc_foundry_strategy,factual,What does Intel say about its foundry services business in its SEC filings?,4.78,0.8889,0.0,0.0,0.0
+avgo_ai_networking,factual,How does Broadcom describe its AI networking and custom accelerator business?,3.93,nan,0.9723,0.0,1.0
+msft_azure_description,factual,How does Microsoft describe the Azure cloud platform in its SEC filings?,7.58,1.0,0.8977,0.9167,1.0
+meta_vr_hardware_risk,factual,What risks does Meta disclose related to its VR and hardware products?,4.75,1.0,0.0,0.0,0.0
+googl_regulatory_risk,factual,What regulatory and antitrust risks does Google disclose in its filings?,11.27,1.0,0.0,1.0,1.0
+amzn_tariff_risk,factual,How does Amazon describe the risk of tariffs and trade policy on its business?,5.92,0.7778,0.9562,1.0,0.0
+tsla_autonomous_driving,factual,How does Tesla describe its autonomous driving technology and the associated risks?,9.69,1.0,0.9634,0.2,1.0
+orcl_database_competition,factual,How does Oracle describe competition in the database and cloud markets?,8.83,1.0,0.9282,1.0,1.0
+crm_agentforce,factual,What does Salesforce say about its Agentforce AI platform in recent filings?,6.32,1.0,0.9318,1.0,1.0
+nvda_supply_chain_risk,factual,What supply chain risks does NVIDIA disclose related to its semiconductor manufacturing?,8.13,1.0,0.982,1.0,0.0
+aapl_services_revenue,factual,How does Apple describe its Services segment and what drives its growth?,8.53,1.0,0.9518,1.0,1.0
+nflx_content_spending,factual,What does Netflix say about its content spending and programming obligations?,9.99,0.9583,0.0,0.5833,0.0
+amd_mi300_ramp,factual,How does AMD describe the ramp of its MI300 AI accelerator products?,5.78,1.0,0.0,1.0,nan
+meta_dau_description,factual,How does Meta describe its daily active people metric in recent filings?,5.19,1.0,0.8756,1.0,1.0
+amzn_advertising_segment,factual,How does Amazon describe its advertising services business?,3.76,1.0,0.9563,0.4167,0.0
+msft_copilot_description,factual,How does Microsoft describe its Copilot AI products in its SEC filings?,7.81,1.0,0.966,1.0,0.0
+orcl_remaining_performance,factual,What does Oracle report about its remaining performance obligations in recent filings?,6.24,1.0,0.9139,1.0,1.0
+tsla_gigafactory_description,factual,How does Tesla describe its Gigafactory manufacturing strategy?,7.44,1.0,0.9256,0.4167,1.0
+avgo_vmware_integration,factual,How does Broadcom describe the integration of VMware following its acquisition?,6.31,1.0,0.9579,1.0,1.0
+crm_international_revenue,factual,What does Salesforce report about its international revenue mix?,8.59,0.8182,0.0,0.4167,1.0
+intc_restructuring,factual,What restructuring actions has Intel announced in its recent SEC filings?,3.83,0.75,0.9506,0.0,0.0
+nvda_datacenter_trend,temporal,How has NVIDIA's data center segment revenue grown across multiple quarters over the past year?,9.6,0.7647,0.9209,0.1429,nan
+aapl_china_trend,temporal,How have Apple's Greater China revenues trended between fiscal year 2024 and 2025?,7.35,1.0,0.0,0.9429,1.0
+msft_revenue_multi_quarter,temporal,How has Microsoft's overall revenue growth rate changed across the last three or four quarterly filings?,5.58,1.0,0.0,0.0,0.0
+meta_capex_trend,temporal,How has Meta's capital expenditure changed across its most recent quarterly filings?,4.87,0.8333,0.9022,0.0,nan
+googl_cloud_multi_quarter,temporal,How has Google Cloud revenue growth trended across multiple recent quarters?,6.52,0.9231,0.9456,1.0,0.5
+nflx_revenue_trend,temporal,How has Netflix's total revenue grown quarter over quarter over the past year?,5.88,1.0,0.9204,0.4167,0.0
+amd_revenue_trend,temporal,How has AMD's total revenue trended across multiple recent quarterly filings?,7.64,1.0,0.9178,0.86,1.0
+nvda_gross_margin_trend,temporal,How has NVIDIA's gross margin percentage changed across recent quarterly filings?,8.78,1.0,0.0,0.25,0.0
+aapl_services_growth_trend,temporal,How has Apple's Services segment revenue grown over the past two fiscal years?,6.2,0.85,0.0,0.85,nan
+crm_revenue_trend,temporal,How has Salesforce's revenue growth rate trended across the last several quarterly filings?,5.18,0.5,0.0,0.0,0.0
+china_risk_companies,cross_company,Which companies in the corpus mention China as a significant business risk?,7.9,0.3889,0.9646,0.95,0.5
+nvda_vs_amd_ai_risks,cross_company,How do NVIDIA and AMD each describe their AI-related regulatory risks?,16.25,nan,0.9385,0.0,nan
+cross_company_hardware_supply,cross_company,Which companies disclose the most concentration risk in their hardware supply chains?,6.5,0.9444,0.0,0.2,0.0
+msft_googl_ai_capex,cross_company,What do Microsoft and Google say about capital expenditure for AI infrastructure?,11.46,nan,0.9551,0.0,nan
+cross_company_cybersecurity_risk,cross_company,Which companies describe cybersecurity breaches or data privacy incidents as material risks?,7.4,0.2,0.9107,0.0,0.0
+cross_company_ai_regulation,cross_company,Which companies discuss the EU AI Act or other AI-specific regulations as a business risk?,7.74,0.7059,1.0,0.4167,0.0
+cross_company_talent_risk,cross_company,Which companies identify competition for engineering talent as a significant risk factor?,9.04,0.0,1.0,0.8875,1.0
+cross_company_climate_risk,cross_company,Which companies discuss climate change or environmental regulation as a business risk?,6.98,0.0,0.9982,0.4167,0.0
+nvda_vs_intc_strategy,cross_company,How do NVIDIA and Intel compare in describing their strategies for the AI chip market?,10.1,1.0,0.0,0.0,0.5
+cross_company_legal_proceedings,cross_company,Which companies report significant ongoing legal proceedings or litigation in their filings?,9.04,0.3333,0.8701,1.0,1.0
+cross_company_rd_spending,cross_company,Which companies describe the largest increase in research and development spending?,4.84,0.2,0.9875,0.2,0.0
+msft_amzn_cloud_compare,cross_company,How do Microsoft and Amazon each describe the growth of their cloud businesses?,10.32,nan,0.9335,0.0,nan
+cross_company_tariff_risk,cross_company,Which companies describe tariffs or trade restrictions as a material business risk?,6.88,0.1667,1.0,0.8042,0.0
+meta_vs_googl_advertising,cross_company,How do Meta and Google each describe competition and risks in the digital advertising market?,16.55,1.0,0.9494,0.0,0.0
+cross_company_geopolitical_risk,cross_company,Which companies identify geopolitical instability or export controls as significant risks?,7.31,0.6,1.0,1.0,0.0
+nvda_vs_amd_gross_margin,cross_company,How do NVIDIA and AMD compare in terms of their reported gross margin percentages?,13.29,nan,0.9733,0.0,nan
+cross_company_operating_margin,cross_company,Which companies report the highest operating income margins among the corpus companies?,6.3,0.5,0.0,0.0,0.5
+orcl_vs_crm_cloud,cross_company,How do Oracle and Salesforce each describe their cloud subscription revenue models?,12.47,0.8788,0.9447,0.0,nan
+cross_company_ai_product_strategy,cross_company,Which companies describe a specific AI product or platform as a key growth driver in their filings?,6.2,1.0,0.0,0.25,0.0
+abstain_capital_gains_tax,abstain,What is the current US capital gains tax rate for individual investors?,5.83,1.0,0.0,0.0,1.0
+abstain_stock_price,abstain,What is Apple's stock price right now?,6.06,0.9167,0.0,0.0,1.0
+abstain_samsung,abstain,What does Samsung say about its semiconductor manufacturing capacity?,4.72,0.7143,0.0,0.0,1.0
+abstain_macro_forecast,abstain,Will the Federal Reserve cut interest rates in the second half of 2026?,3.17,0.8182,0.0,0.0,1.0
+abstain_nvda_stock_price,abstain,What is NVIDIA's current market capitalization?,5.43,1.0,0.0,0.0,1.0
+abstain_earnings_call,abstain,What did Satya Nadella say on Microsoft's most recent earnings call?,3.52,0.6,0.0,0.0,1.0
+abstain_analyst_rating,abstain,What is Goldman Sachs's price target for Apple stock?,3.35,0.5,0.0,0.0,1.0
+abstain_tsmc_financials,abstain,What was TSMC's revenue in 2024?,3.58,1.0,0.0,0.0,1.0
+abstain_aapl_revenue_2010,abstain,What was Apple's revenue in fiscal year 2010?,7.99,nan,0.0,0.0,1.0
+abstain_qualcomm_chips,abstain,What does Qualcomm say about its Snapdragon chip roadmap?,4.41,0.5556,0.0,0.0,1.0
+abstain_spacex,abstain,What are SpaceX's plans for its Starlink satellite internet business?,3.67,1.0,0.0,0.0,1.0
+abstain_crypto_price,abstain,What is the current price of Bitcoin?,6.87,0.9,0.0,0.0,nan
+abstain_unemployment_rate,abstain,What is the current US unemployment rate?,2.77,0.0,0.0,0.0,1.0
+abstain_arm_ipo,abstain,What did ARM Holdings disclose about its business at the time of its IPO?,6.28,0.75,0.0,0.0,1.0
+abstain_msft_linkedin_revenue,abstain,What is LinkedIn's standalone revenue reported by Microsoft in its most recent proxy statement?,3.89,0.6667,0.0,0.0,0.0
+abstain_aapl_product_release_date,abstain,When will Apple release the iPhone 18?,4.54,1.0,0.0,0.0,1.0
+abstain_oil_price,abstain,What is the current price of crude oil per barrel?,0.98,0.0,0.0,0.0,1.0
+abstain_googl_employee_count_2010,abstain,How many employees did Google have in 2010?,7.34,1.0,0.0,0.0,1.0
+abstain_nvda_twitter_sentiment,abstain,What is the general sentiment about NVIDIA on social media right now?,5.42,1.0,0.0,0.0,0.0
+abstain_tsla_elon_musk_tweets,abstain,What has Elon Musk tweeted recently about Tesla's robotaxi plans?,3.36,0.8571,0.0,0.0,1.0
+abstain_meta_zuckerberg_compensation,abstain,What was Mark Zuckerberg's total compensation in fiscal year 2024 according to the proxy statement?,4.49,0.6154,0.0,0.0,1.0
+abstain_gdp_growth,abstain,What was US GDP growth in 2025?,6.33,0.875,0.0,0.0,1.0
+abstain_aapl_2030_forecast,abstain,What will Apple's revenue be in fiscal year 2030?,4.35,1.0,0.0,0.0,1.0
+abstain_private_company,abstain,What were Anthropic's revenues in 2024?,3.59,1.0,0.0,0.0,1.0
+abstain_google_news_article,abstain,"According to the New York Times, how is Google dealing with AI competition from OpenAI?",6.35,0.6667,0.0,1.0,0.0
+abstain_congressional_testimony,abstain,What did Mark Zuckerberg say during his congressional testimony about data privacy?,7.02,1.0,0.0,0.0,1.0
+cross_company_international_revenue_mix,cross_company,Which companies derive the largest share of revenue from international markets outside the United States?,6.64,0.5294,0.0,0.0,0.5
+p2_aapl_msft_services_compare,cross_company,How do Apple and Microsoft each describe their services or subscription-based revenue segments?,11.01,1.0,0.0,0.0,0.0
+p2_nvda_amd_intc_ai_positioning,cross_company,"How do NVIDIA, AMD, and Intel each describe their competitive positioning in the AI semiconductor market?",12.54,0.4615,0.0,0.0,1.0
+p2_nvda_data_center_multi_period,temporal,How has NVIDIA's data center revenue grown over multiple recent quarterly and annual filings?,10.59,0.931,0.9193,0.0,0.0
+p2_meta_capex_quarterly_trend,temporal,How has Meta's capital expenditure trended across multiple quarterly filings over the past year?,4.82,1.0,0.0,0.4762,1.0
+diff_nvda_risk_factors,temporal,What changed in NVIDIA's risk factors between its two most recent 10-Ks?,15.4,0.9828,0.8704,0.0,0.0
+diff_aapl_mda,temporal,What's changed in Apple's MD&A since last year?,11.16,0.5417,0.9153,0.0,0.0
+diff_msft_risk_factors,temporal,What changed in Microsoft's risk factors compared to the prior year?,14.97,0.7209,0.9373,0.0,0.0
+diff_tsla_risk_factors,temporal,What changed in Tesla's risk factors since last year?,13.56,0.6512,0.9039,0.0,0.0
+diff_googl_mda,temporal,What changed in Google's management's discussion and analysis since last year?,17.26,0.7609,0.9003,0.0,0.0
+diff_msft_no_section_named,temporal,What changed for Microsoft since last year?,13.15,0.2222,0.8552,0.0,0.0

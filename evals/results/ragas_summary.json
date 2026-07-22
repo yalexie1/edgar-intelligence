@@ -1,13 +1,97 @@
 {
-  "run_date": "2026-06-23T15:03:50.769571",
-  "n_cases": 10,
-  "subset": true,
+  "run_date": "2026-07-22T10:01:03.617692",
+  "n_cases": 110,
+  "subset": false,
   "group": null,
   "judge_note": "RAGAS uses an LLM judge (OpenAI GPT by default). Scores vary by model version and are directional signals, not ground truth.",
   "metrics": {
-    "faithfulness": NaN,
-    "answer_relevancy": NaN,
-    "context_precision": NaN,
-    "context_recall": NaN
+    "faithfulness": 0.7993,
+    "answer_relevancy": 0.5073,
+    "context_precision": 0.3296,
+    "context_recall": 0.5303
+  },
+  "metrics_n_scored": {
+    "faithfulness": 103,
+    "answer_relevancy": 110,
+    "context_precision": 110,
+    "context_recall": 99
+  },
+  "metrics_applicable": {
+    "faithfulness": 0.9119,
+    "answer_relevancy": 0.6924,
+    "context_precision": 0.5499,
+    "context_recall": 0.5238
+  },
+  "metrics_applicable_n_scored": {
+    "faithfulness": 42,
+    "answer_relevancy": 44,
+    "context_precision": 44,
+    "context_recall": 42
+  },
+  "applicable_groups": [
+    "factual"
+  ],
+  "applicable_note": "Headline metrics are scored on the 'factual' group only (single question, single retrieval pass, single answer \u2014 what RAGAS's four metrics assume). abstain/cross_company/temporal cases use retrieval patterns RAGAS wasn't designed to score (see metrics_by_group for their scores and CLAUDE.md v4 \u00a74 for why).",
+  "metrics_by_group": {
+    "abstain": {
+      "n_cases": 26,
+      "metrics": {
+        "faithfulness": 0.7774,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0385,
+        "context_recall": 0.88
+      },
+      "metrics_n_scored": {
+        "faithfulness": 25,
+        "answer_relevancy": 26,
+        "context_precision": 26,
+        "context_recall": 25
+      }
+    },
+    "cross_company": {
+      "n_cases": 22,
+      "metrics": {
+        "faithfulness": 0.5505,
+        "answer_relevancy": 0.6557,
+        "context_precision": 0.2784,
+        "context_recall": 0.2941
+      },
+      "metrics_n_scored": {
+        "faithfulness": 18,
+        "answer_relevancy": 22,
+        "context_precision": 22,
+        "context_recall": 17
+      }
+    },
+    "factual": {
+      "n_cases": 44,
+      "metrics": {
+        "faithfulness": 0.9119,
+        "answer_relevancy": 0.6924,
+        "context_precision": 0.5499,
+        "context_recall": 0.5238
+      },
+      "metrics_n_scored": {
+        "faithfulness": 42,
+        "answer_relevancy": 44,
+        "context_precision": 44,
+        "context_recall": 42
+      }
+    },
+    "temporal": {
+      "n_cases": 18,
+      "metrics": {
+        "faithfulness": 0.8157,
+        "answer_relevancy": 0.606,
+        "context_precision": 0.2744,
+        "context_recall": 0.2333
+      },
+      "metrics_n_scored": {
+        "faithfulness": 18,
+        "answer_relevancy": 18,
+        "context_precision": 18,
+        "context_recall": 15
+      }
+    }
   }
 }

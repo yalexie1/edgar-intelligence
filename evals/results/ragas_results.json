@@ -1,15 +1,99 @@
 {
   "summary": {
-    "run_date": "2026-06-23T15:03:50.769571",
-    "n_cases": 10,
-    "subset": true,
+    "run_date": "2026-07-22T10:01:03.617692",
+    "n_cases": 110,
+    "subset": false,
     "group": null,
     "judge_note": "RAGAS uses an LLM judge (OpenAI GPT by default). Scores vary by model version and are directional signals, not ground truth.",
     "metrics": {
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "faithfulness": 0.7993,
+      "answer_relevancy": 0.5073,
+      "context_precision": 0.3296,
+      "context_recall": 0.5303
+    },
+    "metrics_n_scored": {
+      "faithfulness": 103,
+      "answer_relevancy": 110,
+      "context_precision": 110,
+      "context_recall": 99
+    },
+    "metrics_applicable": {
+      "faithfulness": 0.9119,
+      "answer_relevancy": 0.6924,
+      "context_precision": 0.5499,
+      "context_recall": 0.5238
+    },
+    "metrics_applicable_n_scored": {
+      "faithfulness": 42,
+      "answer_relevancy": 44,
+      "context_precision": 44,
+      "context_recall": 42
+    },
+    "applicable_groups": [
+      "factual"
+    ],
+    "applicable_note": "Headline metrics are scored on the 'factual' group only (single question, single retrieval pass, single answer \u2014 what RAGAS's four metrics assume). abstain/cross_company/temporal cases use retrieval patterns RAGAS wasn't designed to score (see metrics_by_group for their scores and CLAUDE.md v4 \u00a74 for why).",
+    "metrics_by_group": {
+      "abstain": {
+        "n_cases": 26,
+        "metrics": {
+          "faithfulness": 0.7774,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0385,
+          "context_recall": 0.88
+        },
+        "metrics_n_scored": {
+          "faithfulness": 25,
+          "answer_relevancy": 26,
+          "context_precision": 26,
+          "context_recall": 25
+        }
+      },
+      "cross_company": {
+        "n_cases": 22,
+        "metrics": {
+          "faithfulness": 0.5505,
+          "answer_relevancy": 0.6557,
+          "context_precision": 0.2784,
+          "context_recall": 0.2941
+        },
+        "metrics_n_scored": {
+          "faithfulness": 18,
+          "answer_relevancy": 22,
+          "context_precision": 22,
+          "context_recall": 17
+        }
+      },
+      "factual": {
+        "n_cases": 44,
+        "metrics": {
+          "faithfulness": 0.9119,
+          "answer_relevancy": 0.6924,
+          "context_precision": 0.5499,
+          "context_recall": 0.5238
+        },
+        "metrics_n_scored": {
+          "faithfulness": 42,
+          "answer_relevancy": 44,
+          "context_precision": 44,
+          "context_recall": 42
+        }
+      },
+      "temporal": {
+        "n_cases": 18,
+        "metrics": {
+          "faithfulness": 0.8157,
+          "answer_relevancy": 0.606,
+          "context_precision": 0.2744,
+          "context_recall": 0.2333
+        },
+        "metrics_n_scored": {
+          "faithfulness": 18,
+          "answer_relevancy": 18,
+          "context_precision": 18,
+          "context_recall": 15
+        }
+      }
     }
   },
   "cases": [
@@ -17,101 +101,1101 @@
       "id": "aapl_fy2025_revenue",
       "group": "factual",
       "question": "What was Apple's total revenue in fiscal year 2025?",
-      "elapsed": 3.26,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 5.46,
+      "faithfulness": 0.875,
+      "answer_relevancy": 0.9795,
+      "context_precision": 0.2,
+      "context_recall": 0.0
     },
     {
       "id": "nvda_datacenter_q2fy25",
       "group": "factual",
       "question": "What was NVIDIA's data center revenue in the second quarter of fiscal year 2025 and how did it grow year over year?",
-      "elapsed": 3.59,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 4.54,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8985,
+      "context_precision": 1.0,
+      "context_recall": 1.0
     },
     {
       "id": "msft_cloud_growth",
       "group": "factual",
       "question": "What percentage did Microsoft's overall revenue grow in its most recent quarterly filing?",
-      "elapsed": 4.59,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 5.99,
+      "faithfulness": 0.8261,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
     },
     {
       "id": "googl_cloud_growth",
       "group": "factual",
       "question": "How fast did Google Cloud revenue grow year over year in Google's most recent quarterly filing?",
-      "elapsed": 2.1,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 5.91,
+      "faithfulness": 0.5,
+      "answer_relevancy": 0.9645,
+      "context_precision": 0.3333,
+      "context_recall": 0.0
     },
     {
       "id": "avgo_gross_margin",
       "group": "factual",
       "question": "What was Broadcom's gross margin percentage in its most recent quarterly filing?",
-      "elapsed": 3.15,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 4.47,
+      "faithfulness": 0.8,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
     },
     {
       "id": "aapl_revenue_yoy",
       "group": "factual",
       "question": "How did Apple's total revenue change between fiscal year 2024 and fiscal year 2025?",
-      "elapsed": 3.72,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 4.42,
+      "faithfulness": 0.8667,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.2,
+      "context_recall": 0.0
     },
     {
       "id": "nflx_strategy",
       "group": "factual",
       "question": "What is Netflix's stated strategy for growing its business?",
-      "elapsed": 3.88,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 4.8,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9788,
+      "context_precision": 1.0,
+      "context_recall": 1.0
     },
     {
       "id": "tsla_competition",
       "group": "factual",
       "question": "How does Tesla describe the competitive landscape in the EV market?",
-      "elapsed": 4.2,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 6.89,
+      "faithfulness": 0.9231,
+      "answer_relevancy": 0.9841,
+      "context_precision": 0.0,
+      "context_recall": 0.0
     },
     {
       "id": "amd_ai_risks",
       "group": "factual",
       "question": "What AI-related risks does AMD disclose in its SEC filings?",
-      "elapsed": 6.15,
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "elapsed": 5.51,
+      "faithfulness": 0.875,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.8875,
+      "context_recall": 1.0
     },
     {
       "id": "intc_challenges",
       "group": "factual",
       "question": "What major business challenges does Intel describe in its most recent filings?",
-      "elapsed": 3.81,
+      "elapsed": 3.88,
+      "faithfulness": 0.7778,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "aapl_iphone_revenue_fy2025",
+      "group": "factual",
+      "question": "What was Apple's iPhone revenue in fiscal year 2025?",
+      "elapsed": 6.2,
+      "faithfulness": 0.6667,
+      "answer_relevancy": 1.0,
+      "context_precision": 0.25,
+      "context_recall": 1.0
+    },
+    {
+      "id": "aapl_americas_revenue",
+      "group": "factual",
+      "question": "What were Apple's Americas segment net sales in fiscal year 2025?",
+      "elapsed": 7.84,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9985,
+      "context_precision": 0.8333,
+      "context_recall": 0.0
+    },
+    {
+      "id": "avgo_tsmc_concentration",
+      "group": "factual",
+      "question": "What percentage of Broadcom's wafers were manufactured by TSMC?",
+      "elapsed": 5.0,
+      "faithfulness": 0.625,
+      "answer_relevancy": 0.9784,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "googl_total_revenue_q3cy25",
+      "group": "factual",
+      "question": "What was Google's total revenue in the third quarter of calendar year 2025?",
+      "elapsed": 3.14,
       "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "context_precision": NaN,
+      "answer_relevancy": 0.9809,
+      "context_precision": 0.25,
+      "context_recall": 1.0
+    },
+    {
+      "id": "nvda_datacenter_fy2025_fullyear",
+      "group": "factual",
+      "question": "By what percentage did NVIDIA's data center computing revenue grow in full-year fiscal year 2025?",
+      "elapsed": 5.81,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9789,
+      "context_precision": 0.75,
+      "context_recall": 1.0
+    },
+    {
+      "id": "msft_ai_risk_disclosure",
+      "group": "factual",
+      "question": "What risks does Microsoft disclose related to artificial intelligence in its SEC filings?",
+      "elapsed": 16.57,
+      "faithfulness": 0.7333,
+      "answer_relevancy": 0.9102,
+      "context_precision": 0.2815,
       "context_recall": NaN
+    },
+    {
+      "id": "meta_ai_investment",
+      "group": "factual",
+      "question": "What does Meta say about its capital expenditure plans for AI infrastructure?",
+      "elapsed": 4.65,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "amzn_aws_description",
+      "group": "factual",
+      "question": "How does Amazon describe the AWS business and its role in the company?",
+      "elapsed": 4.92,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9014,
+      "context_precision": 0.8042,
+      "context_recall": 1.0
+    },
+    {
+      "id": "tsla_energy_business",
+      "group": "factual",
+      "question": "How does Tesla describe its energy generation and storage business segment?",
+      "elapsed": 6.05,
+      "faithfulness": 0.8182,
+      "answer_relevancy": 0.944,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "orcl_cloud_strategy",
+      "group": "factual",
+      "question": "How does Oracle describe its cloud infrastructure and applications strategy?",
+      "elapsed": 8.21,
+      "faithfulness": 0.8182,
+      "answer_relevancy": 0.9692,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "crm_revenue_segments",
+      "group": "factual",
+      "question": "What are Salesforce's primary revenue categories as described in its filings?",
+      "elapsed": 12.97,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9609,
+      "context_precision": 0.5,
+      "context_recall": 1.0
+    },
+    {
+      "id": "nflx_ad_tier",
+      "group": "factual",
+      "question": "What does Netflix say about its advertising-supported subscription tier?",
+      "elapsed": 5.35,
+      "faithfulness": 1.0,
+      "answer_relevancy": 1.0,
+      "context_precision": 0.3667,
+      "context_recall": 0.0
+    },
+    {
+      "id": "amd_data_center_revenue",
+      "group": "factual",
+      "question": "How does AMD describe its data center segment performance in recent filings?",
+      "elapsed": 7.21,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9064,
+      "context_precision": 0.5889,
+      "context_recall": 0.0
+    },
+    {
+      "id": "intc_foundry_strategy",
+      "group": "factual",
+      "question": "What does Intel say about its foundry services business in its SEC filings?",
+      "elapsed": 4.78,
+      "faithfulness": 0.8889,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "avgo_ai_networking",
+      "group": "factual",
+      "question": "How does Broadcom describe its AI networking and custom accelerator business?",
+      "elapsed": 3.93,
+      "faithfulness": NaN,
+      "answer_relevancy": 0.9723,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "msft_azure_description",
+      "group": "factual",
+      "question": "How does Microsoft describe the Azure cloud platform in its SEC filings?",
+      "elapsed": 7.58,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8977,
+      "context_precision": 0.9167,
+      "context_recall": 1.0
+    },
+    {
+      "id": "meta_vr_hardware_risk",
+      "group": "factual",
+      "question": "What risks does Meta disclose related to its VR and hardware products?",
+      "elapsed": 4.75,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "googl_regulatory_risk",
+      "group": "factual",
+      "question": "What regulatory and antitrust risks does Google disclose in its filings?",
+      "elapsed": 11.27,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "amzn_tariff_risk",
+      "group": "factual",
+      "question": "How does Amazon describe the risk of tariffs and trade policy on its business?",
+      "elapsed": 5.92,
+      "faithfulness": 0.7778,
+      "answer_relevancy": 0.9562,
+      "context_precision": 1.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "tsla_autonomous_driving",
+      "group": "factual",
+      "question": "How does Tesla describe its autonomous driving technology and the associated risks?",
+      "elapsed": 9.69,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9634,
+      "context_precision": 0.2,
+      "context_recall": 1.0
+    },
+    {
+      "id": "orcl_database_competition",
+      "group": "factual",
+      "question": "How does Oracle describe competition in the database and cloud markets?",
+      "elapsed": 8.83,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9282,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "crm_agentforce",
+      "group": "factual",
+      "question": "What does Salesforce say about its Agentforce AI platform in recent filings?",
+      "elapsed": 6.32,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9318,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "nvda_supply_chain_risk",
+      "group": "factual",
+      "question": "What supply chain risks does NVIDIA disclose related to its semiconductor manufacturing?",
+      "elapsed": 8.13,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.982,
+      "context_precision": 1.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "aapl_services_revenue",
+      "group": "factual",
+      "question": "How does Apple describe its Services segment and what drives its growth?",
+      "elapsed": 8.53,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9518,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "nflx_content_spending",
+      "group": "factual",
+      "question": "What does Netflix say about its content spending and programming obligations?",
+      "elapsed": 9.99,
+      "faithfulness": 0.9583,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.5833,
+      "context_recall": 0.0
+    },
+    {
+      "id": "amd_mi300_ramp",
+      "group": "factual",
+      "question": "How does AMD describe the ramp of its MI300 AI accelerator products?",
+      "elapsed": 5.78,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 1.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "meta_dau_description",
+      "group": "factual",
+      "question": "How does Meta describe its daily active people metric in recent filings?",
+      "elapsed": 5.19,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8756,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "amzn_advertising_segment",
+      "group": "factual",
+      "question": "How does Amazon describe its advertising services business?",
+      "elapsed": 3.76,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9563,
+      "context_precision": 0.4167,
+      "context_recall": 0.0
+    },
+    {
+      "id": "msft_copilot_description",
+      "group": "factual",
+      "question": "How does Microsoft describe its Copilot AI products in its SEC filings?",
+      "elapsed": 7.81,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.966,
+      "context_precision": 1.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "orcl_remaining_performance",
+      "group": "factual",
+      "question": "What does Oracle report about its remaining performance obligations in recent filings?",
+      "elapsed": 6.24,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9139,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "tsla_gigafactory_description",
+      "group": "factual",
+      "question": "How does Tesla describe its Gigafactory manufacturing strategy?",
+      "elapsed": 7.44,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9256,
+      "context_precision": 0.4167,
+      "context_recall": 1.0
+    },
+    {
+      "id": "avgo_vmware_integration",
+      "group": "factual",
+      "question": "How does Broadcom describe the integration of VMware following its acquisition?",
+      "elapsed": 6.31,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9579,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "crm_international_revenue",
+      "group": "factual",
+      "question": "What does Salesforce report about its international revenue mix?",
+      "elapsed": 8.59,
+      "faithfulness": 0.8182,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.4167,
+      "context_recall": 1.0
+    },
+    {
+      "id": "intc_restructuring",
+      "group": "factual",
+      "question": "What restructuring actions has Intel announced in its recent SEC filings?",
+      "elapsed": 3.83,
+      "faithfulness": 0.75,
+      "answer_relevancy": 0.9506,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "nvda_datacenter_trend",
+      "group": "temporal",
+      "question": "How has NVIDIA's data center segment revenue grown across multiple quarters over the past year?",
+      "elapsed": 9.6,
+      "faithfulness": 0.7647,
+      "answer_relevancy": 0.9209,
+      "context_precision": 0.1429,
+      "context_recall": NaN
+    },
+    {
+      "id": "aapl_china_trend",
+      "group": "temporal",
+      "question": "How have Apple's Greater China revenues trended between fiscal year 2024 and 2025?",
+      "elapsed": 7.35,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.9429,
+      "context_recall": 1.0
+    },
+    {
+      "id": "msft_revenue_multi_quarter",
+      "group": "temporal",
+      "question": "How has Microsoft's overall revenue growth rate changed across the last three or four quarterly filings?",
+      "elapsed": 5.58,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "meta_capex_trend",
+      "group": "temporal",
+      "question": "How has Meta's capital expenditure changed across its most recent quarterly filings?",
+      "elapsed": 4.87,
+      "faithfulness": 0.8333,
+      "answer_relevancy": 0.9022,
+      "context_precision": 0.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "googl_cloud_multi_quarter",
+      "group": "temporal",
+      "question": "How has Google Cloud revenue growth trended across multiple recent quarters?",
+      "elapsed": 6.52,
+      "faithfulness": 0.9231,
+      "answer_relevancy": 0.9456,
+      "context_precision": 1.0,
+      "context_recall": 0.5
+    },
+    {
+      "id": "nflx_revenue_trend",
+      "group": "temporal",
+      "question": "How has Netflix's total revenue grown quarter over quarter over the past year?",
+      "elapsed": 5.88,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9204,
+      "context_precision": 0.4167,
+      "context_recall": 0.0
+    },
+    {
+      "id": "amd_revenue_trend",
+      "group": "temporal",
+      "question": "How has AMD's total revenue trended across multiple recent quarterly filings?",
+      "elapsed": 7.64,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9178,
+      "context_precision": 0.86,
+      "context_recall": 1.0
+    },
+    {
+      "id": "nvda_gross_margin_trend",
+      "group": "temporal",
+      "question": "How has NVIDIA's gross margin percentage changed across recent quarterly filings?",
+      "elapsed": 8.78,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.25,
+      "context_recall": 0.0
+    },
+    {
+      "id": "aapl_services_growth_trend",
+      "group": "temporal",
+      "question": "How has Apple's Services segment revenue grown over the past two fiscal years?",
+      "elapsed": 6.2,
+      "faithfulness": 0.85,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.85,
+      "context_recall": NaN
+    },
+    {
+      "id": "crm_revenue_trend",
+      "group": "temporal",
+      "question": "How has Salesforce's revenue growth rate trended across the last several quarterly filings?",
+      "elapsed": 5.18,
+      "faithfulness": 0.5,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "china_risk_companies",
+      "group": "cross_company",
+      "question": "Which companies in the corpus mention China as a significant business risk?",
+      "elapsed": 7.9,
+      "faithfulness": 0.3889,
+      "answer_relevancy": 0.9646,
+      "context_precision": 0.95,
+      "context_recall": 0.5
+    },
+    {
+      "id": "nvda_vs_amd_ai_risks",
+      "group": "cross_company",
+      "question": "How do NVIDIA and AMD each describe their AI-related regulatory risks?",
+      "elapsed": 16.25,
+      "faithfulness": NaN,
+      "answer_relevancy": 0.9385,
+      "context_precision": 0.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "cross_company_hardware_supply",
+      "group": "cross_company",
+      "question": "Which companies disclose the most concentration risk in their hardware supply chains?",
+      "elapsed": 6.5,
+      "faithfulness": 0.9444,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.2,
+      "context_recall": 0.0
+    },
+    {
+      "id": "msft_googl_ai_capex",
+      "group": "cross_company",
+      "question": "What do Microsoft and Google say about capital expenditure for AI infrastructure?",
+      "elapsed": 11.46,
+      "faithfulness": NaN,
+      "answer_relevancy": 0.9551,
+      "context_precision": 0.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "cross_company_cybersecurity_risk",
+      "group": "cross_company",
+      "question": "Which companies describe cybersecurity breaches or data privacy incidents as material risks?",
+      "elapsed": 7.4,
+      "faithfulness": 0.2,
+      "answer_relevancy": 0.9107,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "cross_company_ai_regulation",
+      "group": "cross_company",
+      "question": "Which companies discuss the EU AI Act or other AI-specific regulations as a business risk?",
+      "elapsed": 7.74,
+      "faithfulness": 0.7059,
+      "answer_relevancy": 1.0,
+      "context_precision": 0.4167,
+      "context_recall": 0.0
+    },
+    {
+      "id": "cross_company_talent_risk",
+      "group": "cross_company",
+      "question": "Which companies identify competition for engineering talent as a significant risk factor?",
+      "elapsed": 9.04,
+      "faithfulness": 0.0,
+      "answer_relevancy": 1.0,
+      "context_precision": 0.8875,
+      "context_recall": 1.0
+    },
+    {
+      "id": "cross_company_climate_risk",
+      "group": "cross_company",
+      "question": "Which companies discuss climate change or environmental regulation as a business risk?",
+      "elapsed": 6.98,
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.9982,
+      "context_precision": 0.4167,
+      "context_recall": 0.0
+    },
+    {
+      "id": "nvda_vs_intc_strategy",
+      "group": "cross_company",
+      "question": "How do NVIDIA and Intel compare in describing their strategies for the AI chip market?",
+      "elapsed": 10.1,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.5
+    },
+    {
+      "id": "cross_company_legal_proceedings",
+      "group": "cross_company",
+      "question": "Which companies report significant ongoing legal proceedings or litigation in their filings?",
+      "elapsed": 9.04,
+      "faithfulness": 0.3333,
+      "answer_relevancy": 0.8701,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "cross_company_rd_spending",
+      "group": "cross_company",
+      "question": "Which companies describe the largest increase in research and development spending?",
+      "elapsed": 4.84,
+      "faithfulness": 0.2,
+      "answer_relevancy": 0.9875,
+      "context_precision": 0.2,
+      "context_recall": 0.0
+    },
+    {
+      "id": "msft_amzn_cloud_compare",
+      "group": "cross_company",
+      "question": "How do Microsoft and Amazon each describe the growth of their cloud businesses?",
+      "elapsed": 10.32,
+      "faithfulness": NaN,
+      "answer_relevancy": 0.9335,
+      "context_precision": 0.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "cross_company_tariff_risk",
+      "group": "cross_company",
+      "question": "Which companies describe tariffs or trade restrictions as a material business risk?",
+      "elapsed": 6.88,
+      "faithfulness": 0.1667,
+      "answer_relevancy": 1.0,
+      "context_precision": 0.8042,
+      "context_recall": 0.0
+    },
+    {
+      "id": "meta_vs_googl_advertising",
+      "group": "cross_company",
+      "question": "How do Meta and Google each describe competition and risks in the digital advertising market?",
+      "elapsed": 16.55,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.9494,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "cross_company_geopolitical_risk",
+      "group": "cross_company",
+      "question": "Which companies identify geopolitical instability or export controls as significant risks?",
+      "elapsed": 7.31,
+      "faithfulness": 0.6,
+      "answer_relevancy": 1.0,
+      "context_precision": 1.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "nvda_vs_amd_gross_margin",
+      "group": "cross_company",
+      "question": "How do NVIDIA and AMD compare in terms of their reported gross margin percentages?",
+      "elapsed": 13.29,
+      "faithfulness": NaN,
+      "answer_relevancy": 0.9733,
+      "context_precision": 0.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "cross_company_operating_margin",
+      "group": "cross_company",
+      "question": "Which companies report the highest operating income margins among the corpus companies?",
+      "elapsed": 6.3,
+      "faithfulness": 0.5,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.5
+    },
+    {
+      "id": "orcl_vs_crm_cloud",
+      "group": "cross_company",
+      "question": "How do Oracle and Salesforce each describe their cloud subscription revenue models?",
+      "elapsed": 12.47,
+      "faithfulness": 0.8788,
+      "answer_relevancy": 0.9447,
+      "context_precision": 0.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "cross_company_ai_product_strategy",
+      "group": "cross_company",
+      "question": "Which companies describe a specific AI product or platform as a key growth driver in their filings?",
+      "elapsed": 6.2,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.25,
+      "context_recall": 0.0
+    },
+    {
+      "id": "abstain_capital_gains_tax",
+      "group": "abstain",
+      "question": "What is the current US capital gains tax rate for individual investors?",
+      "elapsed": 5.83,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_stock_price",
+      "group": "abstain",
+      "question": "What is Apple's stock price right now?",
+      "elapsed": 6.06,
+      "faithfulness": 0.9167,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_samsung",
+      "group": "abstain",
+      "question": "What does Samsung say about its semiconductor manufacturing capacity?",
+      "elapsed": 4.72,
+      "faithfulness": 0.7143,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_macro_forecast",
+      "group": "abstain",
+      "question": "Will the Federal Reserve cut interest rates in the second half of 2026?",
+      "elapsed": 3.17,
+      "faithfulness": 0.8182,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_nvda_stock_price",
+      "group": "abstain",
+      "question": "What is NVIDIA's current market capitalization?",
+      "elapsed": 5.43,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_earnings_call",
+      "group": "abstain",
+      "question": "What did Satya Nadella say on Microsoft's most recent earnings call?",
+      "elapsed": 3.52,
+      "faithfulness": 0.6,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_analyst_rating",
+      "group": "abstain",
+      "question": "What is Goldman Sachs's price target for Apple stock?",
+      "elapsed": 3.35,
+      "faithfulness": 0.5,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_tsmc_financials",
+      "group": "abstain",
+      "question": "What was TSMC's revenue in 2024?",
+      "elapsed": 3.58,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_aapl_revenue_2010",
+      "group": "abstain",
+      "question": "What was Apple's revenue in fiscal year 2010?",
+      "elapsed": 7.99,
+      "faithfulness": NaN,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_qualcomm_chips",
+      "group": "abstain",
+      "question": "What does Qualcomm say about its Snapdragon chip roadmap?",
+      "elapsed": 4.41,
+      "faithfulness": 0.5556,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_spacex",
+      "group": "abstain",
+      "question": "What are SpaceX's plans for its Starlink satellite internet business?",
+      "elapsed": 3.67,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_crypto_price",
+      "group": "abstain",
+      "question": "What is the current price of Bitcoin?",
+      "elapsed": 6.87,
+      "faithfulness": 0.9,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": NaN
+    },
+    {
+      "id": "abstain_unemployment_rate",
+      "group": "abstain",
+      "question": "What is the current US unemployment rate?",
+      "elapsed": 2.77,
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_arm_ipo",
+      "group": "abstain",
+      "question": "What did ARM Holdings disclose about its business at the time of its IPO?",
+      "elapsed": 6.28,
+      "faithfulness": 0.75,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_msft_linkedin_revenue",
+      "group": "abstain",
+      "question": "What is LinkedIn's standalone revenue reported by Microsoft in its most recent proxy statement?",
+      "elapsed": 3.89,
+      "faithfulness": 0.6667,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "abstain_aapl_product_release_date",
+      "group": "abstain",
+      "question": "When will Apple release the iPhone 18?",
+      "elapsed": 4.54,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_oil_price",
+      "group": "abstain",
+      "question": "What is the current price of crude oil per barrel?",
+      "elapsed": 0.98,
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_googl_employee_count_2010",
+      "group": "abstain",
+      "question": "How many employees did Google have in 2010?",
+      "elapsed": 7.34,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_nvda_twitter_sentiment",
+      "group": "abstain",
+      "question": "What is the general sentiment about NVIDIA on social media right now?",
+      "elapsed": 5.42,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "abstain_tsla_elon_musk_tweets",
+      "group": "abstain",
+      "question": "What has Elon Musk tweeted recently about Tesla's robotaxi plans?",
+      "elapsed": 3.36,
+      "faithfulness": 0.8571,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_meta_zuckerberg_compensation",
+      "group": "abstain",
+      "question": "What was Mark Zuckerberg's total compensation in fiscal year 2024 according to the proxy statement?",
+      "elapsed": 4.49,
+      "faithfulness": 0.6154,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_gdp_growth",
+      "group": "abstain",
+      "question": "What was US GDP growth in 2025?",
+      "elapsed": 6.33,
+      "faithfulness": 0.875,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_aapl_2030_forecast",
+      "group": "abstain",
+      "question": "What will Apple's revenue be in fiscal year 2030?",
+      "elapsed": 4.35,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_private_company",
+      "group": "abstain",
+      "question": "What were Anthropic's revenues in 2024?",
+      "elapsed": 3.59,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "abstain_google_news_article",
+      "group": "abstain",
+      "question": "According to the New York Times, how is Google dealing with AI competition from OpenAI?",
+      "elapsed": 6.35,
+      "faithfulness": 0.6667,
+      "answer_relevancy": 0.0,
+      "context_precision": 1.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "abstain_congressional_testimony",
+      "group": "abstain",
+      "question": "What did Mark Zuckerberg say during his congressional testimony about data privacy?",
+      "elapsed": 7.02,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "cross_company_international_revenue_mix",
+      "group": "cross_company",
+      "question": "Which companies derive the largest share of revenue from international markets outside the United States?",
+      "elapsed": 6.64,
+      "faithfulness": 0.5294,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.5
+    },
+    {
+      "id": "p2_aapl_msft_services_compare",
+      "group": "cross_company",
+      "question": "How do Apple and Microsoft each describe their services or subscription-based revenue segments?",
+      "elapsed": 11.01,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "p2_nvda_amd_intc_ai_positioning",
+      "group": "cross_company",
+      "question": "How do NVIDIA, AMD, and Intel each describe their competitive positioning in the AI semiconductor market?",
+      "elapsed": 12.54,
+      "faithfulness": 0.4615,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 1.0
+    },
+    {
+      "id": "p2_nvda_data_center_multi_period",
+      "group": "temporal",
+      "question": "How has NVIDIA's data center revenue grown over multiple recent quarterly and annual filings?",
+      "elapsed": 10.59,
+      "faithfulness": 0.931,
+      "answer_relevancy": 0.9193,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "p2_meta_capex_quarterly_trend",
+      "group": "temporal",
+      "question": "How has Meta's capital expenditure trended across multiple quarterly filings over the past year?",
+      "elapsed": 4.82,
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.4762,
+      "context_recall": 1.0
+    },
+    {
+      "id": "diff_nvda_risk_factors",
+      "group": "temporal",
+      "question": "What changed in NVIDIA's risk factors between its two most recent 10-Ks?",
+      "elapsed": 15.4,
+      "faithfulness": 0.9828,
+      "answer_relevancy": 0.8704,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "diff_aapl_mda",
+      "group": "temporal",
+      "question": "What's changed in Apple's MD&A since last year?",
+      "elapsed": 11.16,
+      "faithfulness": 0.5417,
+      "answer_relevancy": 0.9153,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "diff_msft_risk_factors",
+      "group": "temporal",
+      "question": "What changed in Microsoft's risk factors compared to the prior year?",
+      "elapsed": 14.97,
+      "faithfulness": 0.7209,
+      "answer_relevancy": 0.9373,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "diff_tsla_risk_factors",
+      "group": "temporal",
+      "question": "What changed in Tesla's risk factors since last year?",
+      "elapsed": 13.56,
+      "faithfulness": 0.6512,
+      "answer_relevancy": 0.9039,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "diff_googl_mda",
+      "group": "temporal",
+      "question": "What changed in Google's management's discussion and analysis since last year?",
+      "elapsed": 17.26,
+      "faithfulness": 0.7609,
+      "answer_relevancy": 0.9003,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    {
+      "id": "diff_msft_no_section_named",
+      "group": "temporal",
+      "question": "What changed for Microsoft since last year?",
+      "elapsed": 13.15,
+      "faithfulness": 0.2222,
+      "answer_relevancy": 0.8552,
+      "context_precision": 0.0,
+      "context_recall": 0.0
     }
   ]
 }
