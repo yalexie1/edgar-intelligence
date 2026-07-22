@@ -44,7 +44,7 @@ ask.py  ←→  api.py  (FastAPI, Render)  ←→  index.html     (chat UI)
 
 ## Setup
 
-Requires Python 3.11 or 3.12 (the core app works on any modern Python 3, but the optional RAGAS eval layer is incompatible with 3.14 — see Known Limitations).
+Requires Python 3.9+ (developed and tested on 3.14). The optional RAGAS eval layer needed a compatibility patch for a `nest_asyncio`/`asyncio.current_task()` incompatibility — the patch lives inside `evals/eval_ragas.py` itself, no particular Python version required.
 
 Clone the repository and install dependencies:
 
@@ -150,9 +150,7 @@ Results are saved to `evals/last_results.json` and visible at `dashboard.html`.
 
 ### Layer 2 — RAGAS (complementary, optional)
 
-RAGAS computes LLM-as-a-judge metrics: faithfulness, answer relevancy, context precision, and context recall. Scores complement the deterministic suite but are not ground truth — they vary by judge model and version.
-
-> **Note:** Currently blocked on Python 3.14 + `nest_asyncio` incompatibility. Run on Python 3.11 or 3.12.
+RAGAS computes four LLM-as-a-judge metrics: faithfulness, answer relevancy, context precision, and context recall (the dashboard explains each one in plain English, including what a high score does and doesn't mean). Scores complement the deterministic suite but are not ground truth — they vary by judge model and version.
 
 Requires extra dependencies:
 
@@ -167,6 +165,8 @@ python evals/eval_ragas.py --subset 10
 python evals/eval_ragas.py
 ```
 
+**Headline scores are scoped to the `factual` question group (44/110 cases)** — the only group matching RAGAS's assumption of a single question answered from a single retrieval pass. Last real run (2026-07-22): faithfulness 0.912, answer relevancy 0.692, context precision 0.550, context recall 0.524. `abstain` cases are supposed to retrieve weak evidence and answer "the filings don't cover this," which these metrics score as failure rather than correct behavior; `cross_company`/`temporal` cases deliberately retrieve chunks spanning multiple companies or periods, which a per-chunk relevance judge can't distinguish from noise. All four groups' real scores are still shown — nothing is hidden — in the dashboard's expandable "full breakdown by question group" table, and in `evals/results/ragas_summary.json`'s `metrics_by_group` field. Use `python evals/eval_ragas.py --recompute-only` to rebuild the summary/CSV from an already-saved run's per-case scores with no new API calls.
+
 Results are saved to `evals/results/` and shown in the eval dashboard under "RAGAS metrics."
 
 ### Unit tests
@@ -175,10 +175,10 @@ Pure-function tests — no network or paid API calls:
 
 ```bash
 python -m pytest tests/
-# 98 passed
+# 152 passed
 ```
 
-Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`, `chunk_section`, and `_route` (the retrieval-strategy router shared by the blocking and streaming answer paths, including cross-company, temporal, and section-diff routing).
+Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`, `chunk_section`, and `_route` (the retrieval-strategy router shared by the blocking and streaming answer paths, including cross-company, temporal, and section-diff routing), plus the load-testing harness's pure functions (`tests/test_bench.py`) and the RAGAS async-compatibility patch and score-aggregation logic (`tests/test_eval_ragas.py`, skipped automatically if ragas/datasets/pandas aren't installed).
 
 ## Theme tracker
 
@@ -192,7 +192,7 @@ Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`
 - **INTC** has far fewer chunks than the other 12 companies because its XBRL-inline 10-K HTML produces very few extractable text blocks.
 - **Reranking weights** (the cosine + lexical boost formula, and use of the Cohere cross-encoder) are hardcoded heuristics, not tuned against the eval set.
 - **Cold starts**: the Render free-tier backend spins down after ~15 min idle; the first request after that takes 15–30s even with streaming.
-- **RAGAS** (the optional LLM-judge eval layer) is blocked on Python 3.14 due to a `nest_asyncio` incompatibility — run it on Python 3.11 or 3.12.
+- **RAGAS** (the optional LLM-judge eval layer): a full 110-case run legitimately hits OpenAI rate limits/timeouts on a handful of judge calls, so `faithfulness`/`context_recall` are means over slightly fewer than 110 cases (surfaced in the dashboard as "N scored"). Its headline metrics are also intentionally scoped to the `factual` question group — see the Eval harness section above for why the other three groups (abstain, cross_company, temporal) don't fit RAGAS's scoring assumptions.
 - **Rate limiting and CORS** protect against casual abuse, not a determined attacker with rotating IPs.
 - One known eval miss: `avgo_gross_margin` — retrieval surfaces a restructuring 8-K chunk instead of the margin table, and the model correctly abstains rather than guessing.
 

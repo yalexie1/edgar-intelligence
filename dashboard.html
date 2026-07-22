@@ -45,6 +45,20 @@
   /* section headers */
   .section-head { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 32px 0 12px; }
 
+  /* score explanation callout (matches themes.html) */
+  .callout { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 28px; }
+  .callout-head { font-weight: 600; font-size: 13px; margin-bottom: 10px; }
+  .callout p { font-size: 13px; color: var(--muted); margin-bottom: 8px; line-height: 1.7; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout code { font-family: var(--font-mono); font-size: 12px; background: var(--bg);
+    padding: 1px 5px; border-radius: 4px; color: var(--ink); }
+  .callout ul { font-size: 13px; color: var(--muted); padding-left: 20px; }
+  .callout ul li { margin-bottom: 4px; line-height: 1.7; }
+  .callout strong { color: var(--ink); font-weight: 500; }
+  .callout h4 { font-size: 12px; font-weight: 600; color: var(--ink); margin: 14px 0 4px; }
+  .callout h4:first-child { margin-top: 0; }
+
   /* breakdown table */
   .breakdown { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 36px; }
   .breakdown table { width: 100%; border-collapse: collapse; }
@@ -408,41 +422,128 @@ async function loadRagas() {
       return;
     }
     const d = await res.json();
-    const m = d.metrics || {};
-    const fmt = v => v != null ? v.toFixed(3) : "—";
+    // metrics_applicable (factual-group only — see applicable_note) is the
+    // headline as of 2026-07-22; fall back to the old all-groups `metrics`
+    // field so this still renders against a summary.json saved before that
+    // schema addition.
+    const m = d.metrics_applicable || d.metrics || {};
+    const nScored = d.metrics_applicable_n_scored || d.metrics_n_scored || {};
+    const allM = d.metrics || {};
+    const allNScored = d.metrics_n_scored || {};
+    const byGroup = d.metrics_by_group || null;
+    const fmt = v => (v != null && !Number.isNaN(v)) ? v.toFixed(3) : "—";
+    // A handful of cases can fail per-metric (LLM-judge rate limits/timeouts
+    // on a 110-case x 4-metric run) — ragas records those as a missing score
+    // rather than aborting the run. Surface when a metric's mean is over
+    // fewer than the group's case count so the number isn't read as "all
+    // cases scored."
+    const scoredNote = (col, scored, total) => (scored[col] != null && total != null && scored[col] < total)
+      ? ` · ${scored[col]}/${total} scored` : "";
     const runDate = d.run_date ? new Date(d.run_date).toLocaleString() : "unknown";
-    const subset = d.subset ? ` · subset of ${d.n_cases}` : ` · ${d.n_cases} cases`;
+    const subset = d.subset ? ` · subset of ${d.n_cases}` : ` · ${d.n_cases} cases total`;
+    const applicableGroups = d.applicable_groups || ["factual"];
+    const applicableN = byGroup && byGroup[applicableGroups[0]] ? byGroup[applicableGroups[0]].n_cases : null;
+
+    const metricCols = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"];
+    const metricLabels = {
+      faithfulness: ["Faithfulness", "claims grounded in context"],
+      answer_relevancy: ["Answer relevancy", "answer on-topic for question"],
+      context_precision: ["Context precision", "relevant contexts ranked first"],
+      context_recall: ["Context recall", "contexts cover expected answer"],
+    };
+
+    const headlineCards = metricCols.map(col => `
+        <div class="card">
+          <div class="card-label">${metricLabels[col][0]}</div>
+          <div class="card-value">${fmt(m[col])}</div>
+          <div class="card-sub">${metricLabels[col][1]}${scoredNote(col, nScored, applicableN)}</div>
+        </div>`).join("");
+
+    let breakdownHtml = "";
+    if (byGroup) {
+      const groupOrder = ["factual", "abstain", "cross_company", "temporal"];
+      const groupLabel = {
+        factual: "Factual (RAGAS-applicable)",
+        abstain: "Abstain",
+        cross_company: "Cross-company",
+        temporal: "Temporal",
+      };
+      const rows = groupOrder.filter(g => byGroup[g]).map(g => {
+        const gd = byGroup[g];
+        const cells = metricCols.map(col => `<td style="padding:6px 10px;text-align:right;font-family:var(--font-mono)">${fmt(gd.metrics[col])}</td>`).join("");
+        const isApplicable = applicableGroups.includes(g);
+        return `<tr style="${isApplicable ? "font-weight:600" : ""}">
+          <td style="padding:6px 10px">${groupLabel[g] || g}${isApplicable ? " ★" : ""}</td>
+          <td style="padding:6px 10px;text-align:right;font-family:var(--font-mono)">${gd.n_cases}</td>
+          ${cells}
+        </tr>`;
+      }).join("");
+      const headerCells = metricCols.map(col => `<th style="padding:6px 10px;text-align:right;font-weight:500;color:var(--muted)">${metricLabels[col][0]}</th>`).join("");
+      breakdownHtml = `
+      <details style="margin-bottom:36px">
+        <summary style="cursor:pointer;font-size:12px;color:var(--muted);margin-bottom:10px">
+          Full breakdown by question group (all ${d.n_cases} cases)
+        </summary>
+        <div style="color:var(--muted);font-size:12px;line-height:1.6;margin:10px 0">
+          ${escHtml(d.applicable_note || "")}
+        </div>
+        <div style="overflow-x:auto">
+        <table style="border-collapse:collapse;font-size:12px;width:100%">
+          <thead><tr>
+            <th style="padding:6px 10px;text-align:left;font-weight:500;color:var(--muted)">Group</th>
+            <th style="padding:6px 10px;text-align:right;font-weight:500;color:var(--muted)">n</th>
+            ${headerCells}
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        </div>
+        <div style="color:var(--muted);font-size:11px;margin-top:8px">
+          ★ = used for the headline metrics above. All-groups combined average:
+          ${metricCols.map(col => `${metricLabels[col][0]} ${fmt(allM[col])}`).join(" · ")}
+        </div>
+      </details>`;
+    }
+
+    const metricExplainer = `
+      <div class="callout">
+        <div class="callout-head">What these four scores measure — and what they don't</div>
+        <p>RAGAS uses an LLM (OpenAI GPT-4o-mini here) as a judge to score each answer along four independent axes. None of them measure "is the answer correct" directly — each isolates one specific failure mode.</p>
+
+        <h4>Faithfulness</h4>
+        <p><strong>What it measures:</strong> whether every claim in the generated answer is actually supported by the retrieved passages — i.e. did the model hallucinate anything not present in the evidence it was given.</p>
+        <p><strong>How it's computed:</strong> the judge LLM breaks the answer into individual factual statements, then checks each one against the retrieved context and scores the fraction that are backed by it.</p>
+        <p><strong>High score means:</strong> the model stuck to what the evidence actually said. <strong>It does not mean</strong> the evidence itself was correct or complete — a faithful answer built on the wrong passage is still wrong, just not a hallucination.</p>
+
+        <h4>Answer relevancy</h4>
+        <p><strong>What it measures:</strong> whether the answer actually addresses the question that was asked, rather than drifting to an adjacent topic.</p>
+        <p><strong>How it's computed:</strong> the judge LLM generates several hypothetical questions that the given answer would be a good response to, embeds them, and compares those embeddings to the original question's embedding — high similarity means the answer stayed on-topic.</p>
+        <p><strong>High score means:</strong> the answer is shaped like a response to this specific question. <strong>It does not mean</strong> the answer is factually correct — an on-topic but wrong answer can still score well here. It also structurally penalizes abstentions: "the filings don't cover this" doesn't resemble a question about the topic at all, so it scores near zero even when abstaining is the correct behavior.</p>
+
+        <h4>Context precision</h4>
+        <p><strong>What it measures:</strong> whether the passages that were retrieved and handed to the model are ranked with the most relevant ones first, rather than being diluted by tangential chunks.</p>
+        <p><strong>How it's computed:</strong> the judge LLM rates each retrieved chunk's relevance to the question, then computes a rank-weighted precision — a relevant chunk ranked 1st counts for more than the same chunk ranked 5th.</p>
+        <p><strong>High score means:</strong> retrieval put its best evidence at the top. <strong>It does not mean</strong> retrieval found everything relevant in the corpus (that's recall, below) — a system returning one excellent chunk plus four irrelevant ones scores worse here than one returning five mediocre-but-related chunks.</p>
+
+        <h4>Context recall</h4>
+        <p><strong>What it measures:</strong> whether the retrieved passages, taken together, contain everything needed to support a known-correct reference answer.</p>
+        <p><strong>How it's computed:</strong> the judge LLM checks each fact in the reference answer against the retrieved contexts and scores the fraction that are covered by something retrieved.</p>
+        <p><strong>High score means:</strong> retrieval surfaced the material needed to answer completely. <strong>It does not mean</strong> the model actually used that material correctly, or that the final answer was right — this scores retrieval coverage against a reference, independent of what the model then did with it.</p>
+
+        <h4>Why the headline above is scoped to "factual" questions only</h4>
+        <p>All four metrics assume a single question answered from a single retrieval pass — true for this project's <code>factual</code> question group (44 cases), not for the other three. <code>abstain</code> cases (26) are supposed to retrieve weak evidence and answer "the filings don't cover this" — a correct outcome that faithfulness/relevancy/precision score as if it were a failure. <code>cross_company</code> and <code>temporal</code> cases (40 combined) deliberately retrieve chunks spanning multiple companies or filing periods for comparison — individually "irrelevant" to any single sub-claim by a per-chunk judge, but structurally necessary for the comparison the question asked for. The full score for every group is still below, in the expandable breakdown — nothing is hidden, the headline is just scoped to the group these metrics were actually designed to score.</p>
+      </div>`;
 
     section.innerHTML = `
       <div class="section-head" style="margin-top:36px">RAGAS metrics <span style="font-weight:400;font-size:10px;color:var(--muted)">(LLM judge · complementary)</span></div>
       <div style="color:var(--muted);font-family:var(--font-mono);font-size:11px;margin-bottom:14px">
-        Last run: ${runDate}${subset}
+        Last run: ${runDate}${subset}${applicableN != null ? ` · headline scoped to ${applicableGroups.join(", ")} (n=${applicableN})` : ""}
       </div>
       <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 18px;margin-bottom:8px;font-size:13px;color:var(--muted);line-height:1.6">
         ${escHtml(d.judge_note || "")}
       </div>
-      <div class="cards" style="margin-bottom:36px">
-        <div class="card">
-          <div class="card-label">Faithfulness</div>
-          <div class="card-value">${fmt(m.faithfulness)}</div>
-          <div class="card-sub">claims grounded in context</div>
-        </div>
-        <div class="card">
-          <div class="card-label">Answer relevancy</div>
-          <div class="card-value">${fmt(m.answer_relevancy)}</div>
-          <div class="card-sub">answer on-topic for question</div>
-        </div>
-        <div class="card">
-          <div class="card-label">Context precision</div>
-          <div class="card-value">${fmt(m.context_precision)}</div>
-          <div class="card-sub">relevant contexts ranked first</div>
-        </div>
-        <div class="card">
-          <div class="card-label">Context recall</div>
-          <div class="card-value">${fmt(m.context_recall)}</div>
-          <div class="card-sub">contexts cover expected answer</div>
-        </div>
-      </div>`;
+      <div class="cards" style="margin-bottom:16px">${headlineCards}</div>
+      ${metricExplainer}
+      ${breakdownHtml}`;
   } catch (e) {
     // Silently suppress — RAGAS is optional and the network may be unavailable.
   }
