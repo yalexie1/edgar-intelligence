@@ -4,7 +4,13 @@ name: Tests
 # tests/test_pure.py makes zero API calls, so no secrets are needed here.
 on:
   push:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
 
 jobs:
   unit-tests:

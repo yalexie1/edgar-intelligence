@@ -6,6 +6,10 @@ name: Eval-Gated Regression Check
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "**/*.md"
+      - "docs/**"
   workflow_dispatch:
 
 env:
