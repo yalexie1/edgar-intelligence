@@ -9,6 +9,7 @@ uvicorn[standard]
 slowapi
 cohere>=5.0
 pytest
+httpx  # bench/load_test.py (v4 #2); previously only a transitive dep
 
 # Optional — only needed for evals/eval_ragas.py (requires Python 3.11/3.12)
 # ragas>=0.1.9

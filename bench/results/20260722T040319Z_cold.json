@@ -1,0 +1,74 @@
+{
+  "scenario": "cold",
+  "n_unique_questions": 5,
+  "summary": {
+    "count": 5,
+    "errors": 0,
+    "error_rate": 0.0,
+    "p50": 6.567253000001074,
+    "p95": 9.813369367003906,
+    "p99": 10.360126507007516,
+    "mean": 6.621435725397896,
+    "min": 4.14741208399937,
+    "max": 10.49681579200842
+  },
+  "raw_samples": [
+    {
+      "latency_s": 7.0795836669858545,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "latency_s": 10.49681579200842,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "latency_s": 4.14741208399937,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "latency_s": 4.816114083994762,
+      "ok": true,
+      "status": 200
+    },
+    {
+      "latency_s": 6.567253000001074,
+      "ok": true,
+      "status": 200
+    }
+  ],
+  "server_metrics": {
+    "count": 49,
+    "total_s": {
+      "p50": 0.0,
+      "p95": 6.0148,
+      "p99": 8.8482,
+      "count": 49
+    },
+    "retrieval_s": {
+      "p50": 1.2919,
+      "p95": 2.063,
+      "p99": 2.333,
+      "count": 9
+    },
+    "rerank_s": {
+      "p50": 0.67,
+      "p95": 0.8334,
+      "p99": 0.8946,
+      "count": 8
+    },
+    "generation_s": {
+      "p50": 2.8562,
+      "p95": 7.1935,
+      "p99": 8.2437,
+      "count": 9
+    },
+    "routes": {
+      "plain": 8,
+      "cache": 40,
+      "temporal": 1
+    }
+  }
+}
