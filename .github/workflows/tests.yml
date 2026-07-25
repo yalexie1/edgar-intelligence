@@ -2,15 +2,17 @@ name: Tests
 
 # Runs the pure-logic unit suite on every push and PR. Free and network-free:
 # tests/test_pure.py makes zero API calls, so no secrets are needed here.
+#
+# Deliberately NOT path-filtered, unlike eval.yml. This is a required status
+# check on `main`, and GitHub reports a path-filtered workflow as "never ran"
+# rather than "skipped" — so a required check that gets filtered out leaves the
+# PR stuck on "Expected — waiting for status" forever. The suite is free and
+# finishes in ~25s, so there's nothing to save by skipping it on doc-only
+# changes.
 on:
   push:
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
   pull_request:
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
+    branches: [main]
 
 jobs:
   unit-tests:

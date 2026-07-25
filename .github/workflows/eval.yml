@@ -1,15 +1,27 @@
 name: Eval-Gated Regression Check
 
-# Deliberately NOT run on every push/PR — each run calls the real OpenAI,
-# Anthropic, Pinecone, and (optionally) Cohere APIs across the 110-case golden
-# set, which costs real money. Scoped to merge-to-main and manual dispatch only.
+# Gates merges into `main`. Runs on every PR targeting main — which is what
+# branch protection evaluates, since required status checks are resolved per
+# commit SHA — plus manual dispatch.
+#
+# Deliberately NOT triggered on `push: branches: [main]` any more. It was, until
+# 2026-07-25, and that was the *only* trigger, which is why this workflow used to
+# be a post-merge alarm rather than a gate. Keeping both triggers would have run
+# the full 110-case eval twice per merged PR (once on the PR head, once on the
+# resulting merge commit) at real API cost for the same tree. The PR run is the
+# one that can actually block a bad merge, so it's the one that stays.
+#
+# Each run calls the real OpenAI, Anthropic, Pinecone, and (optionally) Cohere
+# APIs across the 110-case golden set, which costs real money — hence the
+# doc-only short-circuit in the first job step below. That step replaces the
+# `paths-ignore` filter this workflow used to carry: GitHub reports a
+# path-filtered workflow as "never ran" rather than "skipped", so as a *required*
+# check the old filter would have left every doc-only PR permanently stuck on
+# "Expected — waiting for status". The short-circuit saves the same API spend
+# while still reporting a result the branch protection rule can see.
 on:
-  push:
+  pull_request:
     branches: [main]
-    paths-ignore:
-      - "README.md"
-      - "**/*.md"
-      - "docs/**"
   workflow_dispatch:
 
 env:
@@ -22,16 +34,77 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so the doc-only diff below can reach the base commit.
+          fetch-depth: 0
+
+      - name: Detect doc-only changes
+        id: scope
+        run: |
+          set -euo pipefail
+
+          # A manual dispatch is always deliberate — never short-circuit it.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch; running the full eval."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            # No other event type currently reaches here. If a `push` trigger is
+            # ever restored, fail safe by running the eval rather than guessing a
+            # diff range — skipping wrongly is the expensive mistake, not running.
+            echo "Event ${{ github.event_name }} has no known diff range; running the full eval."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A brand-new branch or a force-push can leave the base unreachable.
+          # When in doubt, run the eval: a wrong "docs only" verdict would
+          # silently wave a real code change past the gate.
+          if ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            echo "Base commit ${BASE} unavailable; running the full eval."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Changed files:"
+          echo "${CHANGED:-(none)}"
+
+          # Collect the non-doc files explicitly rather than testing `grep -qv`'s
+          # exit status: whether `-q` reports "a line was selected" or "a line
+          # matched" under `-v` differs between grep implementations, and getting
+          # it backwards here would silently wave code changes past the gate.
+          NON_DOC="$(echo "$CHANGED" | grep -vE '(\.md$|^docs/)' || true)"
+
+          if [ -z "$CHANGED" ]; then
+            echo "No file changes detected; running the full eval."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$NON_DOC" ]; then
+            echo "Non-doc files changed; running the full eval:"
+            echo "$NON_DOC"
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only docs changed; skipping the eval and reporting success."
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Python
+        if: steps.scope.outputs.docs_only != 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dependencies
+        if: steps.scope.outputs.docs_only != 'true'
         run: python -m pip install -r requirements.txt
 
       - name: Start API server
+        if: steps.scope.outputs.docs_only != 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -52,9 +125,11 @@ jobs:
           exit 1
 
       - name: Run golden-set eval
+        if: steps.scope.outputs.docs_only != 'true'
         run: python evals/eval.py --url http://127.0.0.1:8000
 
       - name: Enforce pass-rate floor
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           python - <<'PYEOF'
           import json, os, sys
@@ -71,7 +146,7 @@ jobs:
           PYEOF
 
       - name: Upload eval results
-        if: always()
+        if: always() && steps.scope.outputs.docs_only != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: eval-results
