@@ -180,6 +180,24 @@ python -m pytest tests/
 
 Covers `canonical_section`, `build_where`, `diversify_results`, `detect_tickers`, `chunk_section`, and `_route` (the retrieval-strategy router shared by the blocking and streaming answer paths, including cross-company, temporal, and section-diff routing), plus the load-testing harness's pure functions (`tests/test_bench.py`) and the RAGAS async-compatibility patch and score-aggregation logic (`tests/test_eval_ragas.py`, skipped automatically if ragas/datasets/pandas aren't installed).
 
+## Continuous integration
+
+Two GitHub Actions workflows, both required status checks on `main`:
+
+| Workflow | Runs on | Cost | Gate |
+|---|---|---|---|
+| `tests.yml` | every push, every PR into `main` | free, zero-network | must pass to merge |
+| `eval.yml` | every PR into `main`, manual dispatch | real API calls (110 cases) | fails below a 97% pass rate |
+
+A merge into `main` therefore can't land unless the full golden-set eval still answers at
+or above the floor — a regression in retrieval or prompting blocks the merge rather than
+being discovered after deploy. Last recorded runs: 108/110 (98.2%).
+
+`eval.yml` short-circuits on doc-only changes (`*.md`, `docs/**`), reporting success
+without spending API budget. This is done inside the job rather than with `paths-ignore`
+on purpose: GitHub reports a path-filtered workflow as *never ran* rather than *skipped*,
+which would leave a required check waiting forever and make doc-only PRs unmergeable.
+
 ## Theme tracker
 
 `themes.html` shows how strongly 8 predefined themes (AI/ML, Cybersecurity, Supply Chain, Regulation, China/Geopolitics, Climate/ESG, Competition, Cloud/Platform) appear in a company's filings across reporting periods. Scores are cosine + lexical rerank values — not frequency counts or sentiment. Retrieval-only, no LLM cost.
